@@ -41,7 +41,7 @@ Built-in AI analysis reviews a resume and provides feedback on:
 
 ### Installation
 ```bash
-git clone [REPO_URL]
+git clone [https://github.com/khushijmverma-beep/Rezz]
 cd rezz
 npm install
 ```
