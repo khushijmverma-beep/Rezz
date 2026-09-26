@@ -1,3 +1,22 @@
+import Link from "next/link";
+
 export default function Home() {
-  return <h1>Home</h1>;
+  return (
+    <main>
+      <h1>Welcome to Rezz</h1>
+
+      <p>Create and manage your resumes in one place.</p>
+
+      <Link href="/templates">
+      <button>Get Started</button>
+         </Link>
+
+
+      <h2>Build Your Resume</h2>
+      <p>
+        Choose a template, add your information, and create a professional
+        resume.
+      </p>
+    </main>
+  );
 }
