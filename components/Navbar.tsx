@@ -7,6 +7,7 @@ export default function Navbar() {
       <Link href="/login">Login</Link>
       <Link href="/dashboard">Dashboard</Link>
       <Link href="/resume/demo">Resume Detail</Link>
+      <Link href="/templates">Templates</Link>
     </nav>
   );
 }
