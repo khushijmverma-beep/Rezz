@@ -1,6 +1,3 @@
-import { sampleJobDescription } from "./sample-job-description"
-import { SAMPLE_RESUME } from "../gemini-analyze/sample-resume";
-
 import type {
     JobMatchRequest,
     JobMatchResult,
@@ -204,7 +201,18 @@ export async function POST(req: Request) {
         return Response.json({ error: "Could not reach gemini" }, { status: 502 });
     }
 
-    const data = await res.json();
+    let data: any;
+
+    try {
+        data = await res.json();
+    } catch {
+        console.error("Gemini returned a non-JSON response, status": res.status);
+        return Response.json(
+            { error: "Gemini returned an invalid response" },
+            { status: 502 }
+        );
+    }
+       
     if (!res.ok) {
         console.error(data);
         return Response.json(
@@ -244,22 +252,4 @@ export async function POST(req: Request) {
     // 9. Send it back to Juan
     return Response.json(result);
 
-}
-
-// TEMPORARY: for testing with sample data. Visit /api/analyze-job-match in the browser.
-// Remove before merging.
-export async function GET() {
-    if (process.env.NODE_ENV !== "development") {
-        return Response.json({ error: "Not found" }, { status: 404 });
-    }
-
-    const fakeRequest = new Request("http://localhost/api/analyze-job-match", {
-        method: "POST",
-        body: JSON.stringify({
-            resumeText: SAMPLE_RESUME,
-            jobDescription: sampleJobDescription,
-        }),
-    });
-
-    return POST(fakeRequest);
 }
