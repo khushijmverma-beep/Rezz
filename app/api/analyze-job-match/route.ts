@@ -161,7 +161,7 @@ ${jobDescription}
 export async function POST(req: Request) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-        return Response.json({ error: "Server is missing GEMINI_API_KEY "}, { status: 500 });
+        return Response.json({ error: "Server is missing GEMINI_API_KEY"}, { status: 500 });
     }
 
     let body: unknown;
@@ -216,7 +216,7 @@ export async function POST(req: Request) {
     if (!res.ok) {
         console.error(data);
         return Response.json(
-            { error: "Gemini call failed" , details: data },
+            { error: "Gemini call failed" },
             { status: res.status }
         );
     }
@@ -225,7 +225,7 @@ export async function POST(req: Request) {
     if (typeof text !== "string") {
         console.error(data);
         return Response.json(
-            { error: "Gemini returned no text", details: data },
+            { error: "Gemini returned no text" },
             { status: 502 }
         );
     }
@@ -234,7 +234,7 @@ export async function POST(req: Request) {
     if (!parsed) {
         console.error(text);
         return Response.json(
-            { error: "Gemini did not return valid JSON", details: text },
+            { error: "Gemini did not return valid JSON" },
             { status: 502 }
         );
     }
