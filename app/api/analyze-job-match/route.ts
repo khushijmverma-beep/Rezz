@@ -249,7 +249,6 @@ export async function POST(req: Request) {
         },
     };
 
-    // 9. Send it back to Juan
     return Response.json(result);
 
 }
