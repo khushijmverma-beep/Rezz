@@ -206,7 +206,7 @@ export async function POST(req: Request) {
     try {
         data = await res.json();
     } catch {
-        console.error("Gemini returned a non-JSON response, status": res.status);
+        console.error("Gemini returned a non-JSON response, status:", res.status);
         return Response.json(
             { error: "Gemini returned an invalid response" },
             { status: 502 }
