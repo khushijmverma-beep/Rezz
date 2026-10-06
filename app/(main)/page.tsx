@@ -21,7 +21,7 @@ export default function Home() {
         <div className="mt-8">
           <Link
             href="/templates"
-            className="inline-flex rounded-lg bg-black px-6 py-3 font-medium text-white transition hover:bg-gray-800"
+            className="inline-flex rounded-lg bg-black px-6 py-3 font-medium text-white! transition hover:bg-gray-800"
           >
             Get Started
           </Link>
