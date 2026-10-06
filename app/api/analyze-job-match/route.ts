@@ -83,10 +83,14 @@ function parseGeminiJobMatch(text: string): GeminiJobMatch | null {
     return null;
 }
 
-function toRating(score:number): "strong" | "medium" | "weak" {
-    if (score >= 75) return "strong";
-    if (score >= 50) return "medium";
+function toRating(matchScore: number): "strong" | "medium" | "weak" {
+    if (matchScore >= 75) return "strong";
+    if (matchScore >= 50) return "medium";
     return "weak";
+}
+
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function buildPrompt(resumeText: string, jobDescription: string): string {
@@ -177,48 +181,64 @@ export async function POST(req: Request) {
         );
     }
 
-    let res: Response;
-    try {
-        res = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
-            {
-                method: "POST",
-                headers: {
-                    "x-goog-api-key": apiKey,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: buildPrompt(body.resumeText, body.jobDescription) }] }],
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        temperature: 0.2
-                    },
-                }),
-            }
-        );
-    } catch (err) {
-        console.error(err);
-        return Response.json({ error: "Could not reach gemini" }, { status: 502 });
-    }
+    const prompt = buildPrompt(body.resumeText, body.jobDescription);
+    const geminiRequest = {
+        method: "POST",
+        headers: {
+            "x-goog-api-key": apiKey,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+                responseMimeType: "application/json",
+                temperature: 0.2,
+            },
+        }),
+    };
 
+    const backoffsMs = [1000, 2000, 4000];
+    let res: Response | undefined;
     let data: any;
 
-    try {
-        data = await res.json();
-    } catch {
-        console.error("Gemini returned a non-JSON response, status:", res.status);
-        return Response.json(
-            { error: "Gemini returned an invalid response" },
-            { status: 502 }
-        );
-    }
-       
-    if (!res.ok) {
-        console.error(data);
-        return Response.json(
-            { error: "Gemini call failed" },
-            { status: res.status }
-        );
+    for (let attempt = 0; attempt <= backoffsMs.length; attempt++) {
+        try {
+            res = await fetch(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+                geminiRequest
+            );
+        } catch (err) {
+            console.error(err);
+            return Response.json({ error: "Could not reach gemini" }, { status: 502 });
+        }
+
+        try {
+            data = await res.json();
+        } catch {
+            console.error("Gemini returned a non-JSON response, status:", res.status);
+            return Response.json(
+                { error: "Gemini returned an invalid response" },
+                { status: 502 }
+            );
+        }
+
+        const shouldRetry =
+            (res.status === 503 || res.status === 429) && attempt < backoffsMs.length;
+        if (shouldRetry) {
+            console.error(data);
+            await sleep(backoffsMs[attempt]);
+            continue;
+        }
+
+        if (!res.ok) {
+            console.error(data);
+            return Response.json(
+                { error: "Gemini call failed" },
+                { status: res.status }
+            );
+        }
+
+        break;
     }
 
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -239,16 +259,17 @@ export async function POST(req: Request) {
         );
     }
 
-    const score = Math.round(Math.min(100, Math.max(0, parsed.overallFit.matchScore)));
+    const matchScore = Math.round(
+        Math.min(100, Math.max(0, parsed.overallFit.matchScore))
+    );
     const result: JobMatchResult = {
         ...parsed,
         overallFit: {
-            matchScore: score,
-            rating: toRating(score),
+            matchScore,
+            rating: toRating(matchScore),
             summary: parsed.overallFit.summary,
         },
     };
 
     return Response.json(result);
-
 }
