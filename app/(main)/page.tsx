@@ -4,35 +4,31 @@ import ResumeCard from "@/components/ResumeCard";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-white text-black">
-      {/* Hero Section */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="max-w-3xl">
-          <p className="mb-3 text-sm font-medium uppercase tracking-wide text-gray-500">
-            Resume Builder
-          </p>
+    <main>
+      <section>
+        <p className="mb-3 text-sm font-medium uppercase tracking-wide text-gray-500">
+          Resume Builder
+        </p>
 
-          <h1 className="text-5xl font-bold tracking-tight">
-            Build a resume that represents you.
-          </h1>
+        <h1 className="text-5xl font-bold tracking-tight">
+          Build a resume that represents you.
+        </h1>
 
-          <p className="mt-5 max-w-2xl text-lg text-gray-600">
-            Create and manage your resumes in one place with Rezz.
-          </p>
+        <p className="mt-5 max-w-2xl text-lg text-gray-600">
+          Create and manage your resumes in one place with Rezz.
+        </p>
 
-          <div className="mt-8">
-            <Link
-              href="/templates"
-              className="inline-flex rounded-lg bg-black px-6 py-3 font-medium text-white transition hover:bg-gray-800"
-            >
-              Get Started
-            </Link>
-          </div>
+        <div className="mt-8">
+          <Link
+            href="/templates"
+            className="inline-flex rounded-lg bg-black px-6 py-3 font-medium text-white transition hover:bg-gray-800"
+          >
+            Get Started
+          </Link>
         </div>
       </section>
 
-      {/* Templates Section */}
-      <section className="mx-auto max-w-6xl px-6 py-12">
+      <section className="mt-12">
         <div className="mb-6">
           <h2 className="text-2xl font-semibold">Choose a Template</h2>
 
@@ -41,7 +37,6 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Template Cards */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <TemplateCard
             name="Modern"
@@ -63,8 +58,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Recent Resumes Section */}
-      <section className="mx-auto max-w-6xl px-6 py-12">
+      <section className="mt-12">
         <div className="mb-6">
           <h2 className="text-2xl font-semibold">Recent Resumes</h2>
 
@@ -73,7 +67,6 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Resume Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <ResumeCard
             name="Software Engineer Resume"

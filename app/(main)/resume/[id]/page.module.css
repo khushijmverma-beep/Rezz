@@ -1,0 +1,178 @@
+.resumeView {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 8.5in);
+  align-items: start;
+  justify-content: center;
+  gap: 1.5rem;
+  min-height: calc(100vh - 7rem);
+  padding: 2rem 1rem;
+  color: #202124;
+  background: #f4f5f7;
+}
+
+.sidebar {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+}
+
+.dashboardLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid #d5d9e0;
+  border-radius: 0.45rem;
+  background: #fff;
+  color: #293449;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.dashboardLink:hover {
+  border-color: #aeb7c5;
+  background: #f8fafc;
+}
+
+.dashboardLink:focus-visible {
+  outline: 3px solid #91b7f4;
+  outline-offset: 3px;
+}
+
+.paper {
+  width: 100%;
+  min-height: 11in;
+  padding: 0.8in 0.85in;
+  border: 1px solid #e2e5e9;
+  background: #fff;
+  box-shadow: 0 12px 36px rgb(28 39 56 / 12%);
+}
+
+.resumeHeader {
+  padding-bottom: 1.7rem;
+  border-bottom: 1px solid #dfe3e8;
+  text-align: center;
+}
+
+.pageLabel {
+  margin: 0 0 0.8rem;
+  color: #687386;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.resumeHeader h1 {
+  margin: 0;
+  color: #1d2939;
+  font-size: clamp(1.65rem, 4vw, 2.1rem);
+  line-height: 1.2;
+}
+
+.contactDetails {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 1.5rem;
+  margin-top: 1.25rem;
+  color: #4b5565;
+  font-size: 0.94rem;
+}
+
+.contactDetails p,
+.entry p {
+  margin: 0;
+}
+
+.contactDetails strong {
+  color: #263247;
+}
+
+.resumeSections {
+  display: grid;
+  gap: 1.55rem;
+  padding-top: 1.7rem;
+}
+
+.resumeSection h2 {
+  margin: 0 0 0.85rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 2px solid #e6e9ee;
+  color: #263247;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.entry {
+  padding-left: 0.9rem;
+  border-left: 2px solid #d8e3f4;
+  color: #4b5565;
+  line-height: 1.65;
+}
+
+.entry h3 {
+  margin: 0 0 0.15rem;
+  color: #273449;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+@media (max-width: 1120px) {
+  .resumeView {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    min-height: 0;
+    padding: 1rem 0.5rem;
+  }
+
+  .sidebar {
+    width: min(100%, 32rem);
+    justify-self: center;
+  }
+}
+
+@media (max-width: 760px) {
+  .paper {
+    min-height: 0;
+    padding: clamp(1.5rem, 7vw, 3rem) clamp(1.25rem, 7vw, 2.5rem);
+  }
+}
+
+@page {
+  size: letter;
+  margin: 0;
+}
+
+@media print {
+  :global(body > nav) {
+    display: none;
+  }
+
+  :global(body > main) {
+    padding: 0 !important;
+  }
+
+  .resumeView {
+    display: block;
+    min-height: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .paper {
+    width: 8.5in;
+    min-height: 11in;
+    margin: 0;
+    border: 0;
+    box-shadow: none;
+  }
+}

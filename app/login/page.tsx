@@ -31,7 +31,7 @@ export default function LoginPage() {
         
       </form>
 
-      <p>Don't have an account? Sign up</p>
+      <p>Don&apos;t have an account? Sign up</p>
     </main>
   );
 }
