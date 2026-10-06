@@ -29,6 +29,13 @@ export default function AnalyzePanel({ resumeText }: AnalyzePanelProps) {
       const data: unknown = await response.json();
 
       if (!response.ok) {
+        if (response.status === 503 || response.status === 429) {
+          setError(
+            "The AI service is busy right now. Please try again in a minute."
+          );
+          return;
+        }
+
         const message =
           typeof data === "object" &&
           data !== null &&
