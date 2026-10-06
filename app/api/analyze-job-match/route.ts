@@ -5,9 +5,15 @@ import type {
     SuggestedRewording,
 } from "@/lib/types/job-match";
 
+const PRIMARY_GEMINI_MODEL = "gemini-3.6-flash";
+const FALLBACK_GEMINI_MODEL = "gemini-3.5-flash";
+const TOTAL_BUDGET_MS = 20_000;
+const FALLBACK_RESERVE_MS = 7_000;
+const BACKOFFS_MS = [1000, 2000, 4000];
+
 type GeminiJobMatch = Omit<JobMatchResult, "overallFit"> & {
     overallFit: { matchScore: number; summary: string };
-}
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null;
@@ -74,7 +80,7 @@ function parseGeminiJobMatch(text: string): GeminiJobMatch | null {
         try {
             const parsed: unknown = JSON.parse(candidate);
             if (isGeminiJobMatch(parsed)) {
-            return parsed;
+                return parsed;
             }
         } catch {
             continue;
@@ -91,6 +97,10 @@ function toRating(matchScore: number): "strong" | "medium" | "weak" {
 
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function remainingMs(deadline: number): number {
+    return Math.max(0, deadline - Date.now());
 }
 
 function buildPrompt(resumeText: string, jobDescription: string): string {
@@ -162,27 +172,21 @@ ${jobDescription}
 </job_description>`;
 }
 
-export async function POST(req: Request) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        return Response.json({ error: "Server is missing GEMINI_API_KEY"}, { status: 500 });
-    }
+type GeminiAttemptResult =
+    | { kind: "success"; model: string; data: any }
+    | { kind: "http_error"; model: string; status: number; data: any }
+    | { kind: "unreachable" }
+    | { kind: "invalid_response"; status: number }
+    | { kind: "budget_exhausted"; model: string; status?: number; data?: any };
 
-    let body: unknown;
-    try {
-        body = await req.json();
-    } catch {
-        return Response.json({ error: "Request body must be valid JSON" }, { status: 400 });
-    }
-
-    if (!isJobMatchRequest(body)) {
-        return Response.json(
-            { error: "resumeText and jobDescription are required non-empty strings" }, { status: 400 }
-        );
-    }
-
-    const prompt = buildPrompt(body.resumeText, body.jobDescription);
-    const geminiRequest = {
+async function callGeminiWithRetries(
+    model: string,
+    apiKey: string,
+    prompt: string,
+    deadline: number,
+    maxRetries: number
+): Promise<GeminiAttemptResult> {
+    const requestInit: RequestInit = {
         method: "POST",
         headers: {
             "x-goog-api-key": apiKey,
@@ -197,49 +201,162 @@ export async function POST(req: Request) {
         }),
     };
 
-    const backoffsMs = [1000, 2000, 4000];
-    let res: Response | undefined;
-    let data: any;
+    let lastStatus: number | undefined;
+    let lastData: any;
 
-    for (let attempt = 0; attempt <= backoffsMs.length; attempt++) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        const budget = remainingMs(deadline);
+        if (budget <= 0) {
+            return {
+                kind: "budget_exhausted",
+                model,
+                status: lastStatus,
+                data: lastData,
+            };
+        }
+
+        let res: Response;
         try {
             res = await fetch(
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
-                geminiRequest
+                `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+                {
+                    ...requestInit,
+                    signal: AbortSignal.timeout(budget),
+                }
             );
         } catch (err) {
             console.error(err);
-            return Response.json({ error: "Could not reach gemini" }, { status: 502 });
+            if (remainingMs(deadline) <= 0) {
+                return {
+                    kind: "budget_exhausted",
+                    model,
+                    status: lastStatus,
+                    data: lastData,
+                };
+            }
+            return { kind: "unreachable" };
         }
 
+        let data: any;
         try {
             data = await res.json();
         } catch {
             console.error("Gemini returned a non-JSON response, status:", res.status);
-            return Response.json(
-                { error: "Gemini returned an invalid response" },
-                { status: 502 }
-            );
+            return { kind: "invalid_response", status: res.status };
         }
 
-        const shouldRetry =
-            (res.status === 503 || res.status === 429) && attempt < backoffsMs.length;
-        if (shouldRetry) {
+        lastStatus = res.status;
+        lastData = data;
+
+        const temporary = res.status === 503 || res.status === 429;
+        if (temporary && attempt < maxRetries) {
             console.error(data);
-            await sleep(backoffsMs[attempt]);
+            const wait = Math.min(BACKOFFS_MS[attempt] ?? 0, remainingMs(deadline));
+            if (wait <= 0) {
+                return {
+                    kind: "budget_exhausted",
+                    model,
+                    status: res.status,
+                    data,
+                };
+            }
+            await sleep(wait);
             continue;
         }
 
         if (!res.ok) {
-            console.error(data);
-            return Response.json(
-                { error: "Gemini call failed" },
-                { status: res.status }
-            );
+            return { kind: "http_error", model, status: res.status, data };
         }
 
-        break;
+        return { kind: "success", model, data };
     }
+
+    return {
+        kind: "budget_exhausted",
+        model,
+        status: lastStatus,
+        data: lastData,
+    };
+}
+
+export async function POST(req: Request) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        return Response.json({ error: "Server is missing GEMINI_API_KEY" }, { status: 500 });
+    }
+
+    let body: unknown;
+    try {
+        body = await req.json();
+    } catch {
+        return Response.json({ error: "Request body must be valid JSON" }, { status: 400 });
+    }
+
+    if (!isJobMatchRequest(body)) {
+        return Response.json(
+            { error: "resumeText and jobDescription are required non-empty strings" },
+            { status: 400 }
+        );
+    }
+
+    const prompt = buildPrompt(body.resumeText, body.jobDescription);
+    const deadline = Date.now() + TOTAL_BUDGET_MS;
+    const primaryDeadline = Math.min(deadline, Date.now() + (TOTAL_BUDGET_MS - FALLBACK_RESERVE_MS));
+
+    let outcome = await callGeminiWithRetries(
+        PRIMARY_GEMINI_MODEL,
+        apiKey,
+        prompt,
+        primaryDeadline,
+        BACKOFFS_MS.length
+    );
+
+    const primaryUnavailable =
+        (outcome.kind === "http_error" || outcome.kind === "budget_exhausted") &&
+        (outcome.status === 503 || outcome.status === 429);
+
+    if (primaryUnavailable && remainingMs(deadline) > 0) {
+        console.error(
+            `Primary model ${PRIMARY_GEMINI_MODEL} unavailable; trying fallback ${FALLBACK_GEMINI_MODEL}`
+        );
+        outcome = await callGeminiWithRetries(
+            FALLBACK_GEMINI_MODEL,
+            apiKey,
+            prompt,
+            deadline,
+            0
+        );
+    }
+
+    if (outcome.kind === "unreachable") {
+        return Response.json({ error: "Could not reach gemini" }, { status: 502 });
+    }
+
+    if (outcome.kind === "invalid_response") {
+        return Response.json(
+            { error: "Gemini returned an invalid response" },
+            { status: 502 }
+        );
+    }
+
+    if (outcome.kind === "budget_exhausted") {
+        console.error(outcome.data ?? "Gemini budget exhausted");
+        return Response.json(
+            { error: "Gemini call failed" },
+            { status: outcome.status ?? 503 }
+        );
+    }
+
+    if (outcome.kind === "http_error") {
+        console.error(outcome.data);
+        return Response.json(
+            { error: "Gemini call failed" },
+            { status: outcome.status }
+        );
+    }
+
+    const { model, data } = outcome;
+    console.log(`analyze-job-match answered by model: ${model}`);
 
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (typeof text !== "string") {
