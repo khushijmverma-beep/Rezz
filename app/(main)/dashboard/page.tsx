@@ -8,25 +8,19 @@ export default function DashboardPage() {
 
       <h2>Your Resumes</h2>
 
-      <div>
+      <div className="surface-card resume-summary">
         <h3>Software Engineer Resume</h3>
         <p>Last updated: September 26, 2026</p>
-        <Link href="/resume/demo">
-        <button>View Resume</button>
-        </Link>
+        <Link className="button-link" href="/resume/demo">View Resume</Link>
       </div>
 
-      <div>
+      <div className="surface-card resume-summary">
         <h3>Internship Resume</h3>
         <p>Last updated: September 20, 2026</p>
-        <Link href="/resume/demo">
-        <button>View Resume</button>
-        </Link>
+        <Link className="button-link" href="/resume/demo">View Resume</Link>
       </div>
 
-      <Link href="/templates">
-      <button>Create New Resume</button>
-      </Link>
+      <Link className="button-link" href="/templates">Create New Resume</Link>
     </main>
   );
 }

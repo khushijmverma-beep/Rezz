@@ -7,9 +7,7 @@ export default function Home() {
 
       <p>Create and manage your resumes in one place.</p>
 
-      <Link href="/templates">
-      <button>Get Started</button>
-         </Link>
+      <Link className="button-link" href="/templates">Get Started</Link>
 
 
       <h2>Build Your Resume</h2>
