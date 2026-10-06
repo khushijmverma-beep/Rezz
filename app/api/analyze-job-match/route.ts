@@ -103,6 +103,13 @@ function remainingMs(deadline: number): number {
     return Math.max(0, deadline - Date.now());
 }
 
+function logGeminiNonOkResponse(model: string, status: number, body: unknown): void {
+    console.error(
+        `Gemini non-OK response from ${model} (status ${status}):`,
+        body
+    );
+}
+
 function buildPrompt(resumeText: string, jobDescription: string): string {
     return `You are an expert technical resume reviewer. Compare the resume between the
 <resume> tags to the job description between the <job_description> tags.
@@ -250,7 +257,7 @@ async function callGeminiWithRetries(
 
         const temporary = res.status === 503 || res.status === 429;
         if (temporary && attempt < maxRetries) {
-            console.error(data);
+            logGeminiNonOkResponse(model, res.status, data);
             const wait = Math.min(BACKOFFS_MS[attempt] ?? 0, remainingMs(deadline));
             if (wait <= 0) {
                 return {
@@ -265,6 +272,7 @@ async function callGeminiWithRetries(
         }
 
         if (!res.ok) {
+            logGeminiNonOkResponse(model, res.status, data);
             return { kind: "http_error", model, status: res.status, data };
         }
 
@@ -340,7 +348,11 @@ export async function POST(req: Request) {
     }
 
     if (outcome.kind === "budget_exhausted") {
-        console.error(outcome.data ?? "Gemini budget exhausted");
+        if (outcome.status !== undefined) {
+            logGeminiNonOkResponse(outcome.model, outcome.status, outcome.data);
+        } else {
+            console.error(outcome.data ?? "Gemini budget exhausted");
+        }
         return Response.json(
             { error: "Gemini call failed" },
             { status: outcome.status ?? 503 }
@@ -348,7 +360,7 @@ export async function POST(req: Request) {
     }
 
     if (outcome.kind === "http_error") {
-        console.error(outcome.data);
+        // Already logged in callGeminiWithRetries when the non-OK response arrived.
         return Response.json(
             { error: "Gemini call failed" },
             { status: outcome.status }
