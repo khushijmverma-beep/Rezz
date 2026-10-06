@@ -1,3 +1,5 @@
+@import "tailwindcss"; 
+
 * {
   box-sizing: border-box;
 }
@@ -10,3 +12,7 @@ body {
 a {
   color: inherit;
 }
+
+
+
+
