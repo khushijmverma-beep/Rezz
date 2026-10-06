@@ -20,9 +20,7 @@ export default function ResumeDetailPage() {
       <h3>Skills</h3>
       <p>Java, Python, C++, Git</p>
 
-      <Link href="/dashboard">
-      <button>Edit Resume</button>
-      </Link>
+      <Link className="button-link" href="/dashboard">Edit Resume</Link>
     </main>
   );
 }
