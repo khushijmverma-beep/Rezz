@@ -1,6 +1,20 @@
-import Link from "next/link";
 import AnalyzePanel from "@/components/AnalyzePanel";
+import Link from "next/link";
 import styles from "./page.module.css";
+
+const resumeText = `Name: Name
+Email: Name@example.com
+
+Education
+University of Texas at Dallas
+Bachelor of Science in Computer Science
+
+Experience
+Software Engineering Intern
+Worked on software development projects.
+
+Skills
+Java, Python, C++, Git`;
 
 export default function ResumeDetailPage() {
   return (
@@ -9,7 +23,7 @@ export default function ResumeDetailPage() {
         <Link className={styles.dashboardLink} href="/dashboard">
           Dashboard
         </Link>
-        <AnalyzePanel />
+        <AnalyzePanel resumeText={resumeText} />
       </aside>
 
       <article className={styles.paper} aria-labelledby="resume-title">
