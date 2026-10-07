@@ -10,6 +10,42 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
+function getAuthErrorMessage(error: unknown): string | null {
+  console.error(error);
+
+  const code =
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
+      ? error.code
+      : "";
+
+  switch (code) {
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+      return "Incorrect email or password.";
+    case "auth/email-already-in-use":
+      return "An account with this email already exists. Try logging in instead.";
+    case "auth/weak-password":
+      return "Password must be at least 6 characters.";
+    case "auth/invalid-email":
+      return "Please enter a valid email address.";
+    case "auth/popup-closed-by-user":
+    case "auth/cancelled-popup-request":
+      return null;
+    case "auth/popup-blocked":
+      return "Your browser blocked the sign-in popup. Allow popups and try again.";
+    case "auth/too-many-requests":
+      return "Too many attempts. Please wait a few minutes and try again.";
+    case "auth/network-request-failed":
+      return "Network error. Check your connection and try again.";
+    default:
+      return "Something went wrong. Please try again.";
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -34,10 +70,9 @@ export default function LoginPage() {
 
       router.replace("/dashboard");
     } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("Something went wrong. Please try again.");
+      const message = getAuthErrorMessage(error);
+      if (message) {
+        setError(message);
       }
     } finally {
       setLoading(false);
@@ -55,10 +90,9 @@ export default function LoginPage() {
 
       router.replace("/dashboard");
     } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("Google sign-in failed. Please try again.");
+      const message = getAuthErrorMessage(error);
+      if (message) {
+        setError(message);
       }
     } finally {
       setLoading(false);
