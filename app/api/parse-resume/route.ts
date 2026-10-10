@@ -1,192 +1,101 @@
 import { NextResponse } from "next/server";
+import { PDFParse } from "pdf-parse";
+import { extractResumeFields, MOCK_RESUME_FIELDS } from "@/lib/ai/extractResumeFields";
+import { GeminiError } from "@/lib/gemini";
 
-const MODEL = "gemini-3.5-flash-lite";
-const MAX_PDF_BYTES = 5 * 1024 * 1024;
-const BACKOFFS_MS = [1000, 2000, 4000];
+export const runtime = "nodejs";
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+// set max limit
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const NOT_RESUME_MESSAGE = "Please try again with more specific info";
+
+// check what file is being passed
+function getFileKind(file: File): "pdf" | "txt" | null {
+    const name = file.name.toLowerCase();
+    if (file.type === "application/pdf" || name.endsWith(".pdf")) return "pdf";
+    if (file.type === "text/plain" || name.endsWith(".txt")) return "txt";
+    return null;
 }
 
-function logGeminiNonOkResponse(model: string, status: number, body: unknown): void {
-  console.error(`Gemini non-OK response from ${model} (status ${status}):`, body);
-}
-
-function stripCodeFences(text: string): string {
-  return text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
-}
-
-function parseResumeJson(text: string): Record<string, unknown> | null {
-  const candidates = [text.trim(), stripCodeFences(text)];
-  const objectMatch = text.match(/\{[\s\S]*\}/);
-  if (objectMatch) {
-    candidates.push(objectMatch[0]);
-  }
-
-  for (const candidate of candidates) {
+// read pdf file
+async function readPdfText(file: File): Promise<string> {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const parser = new PDFParse({ data: buffer });
     try {
-      const parsed: unknown = JSON.parse(candidate);
-      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
-        return parsed as Record<string, unknown>;
-      }
-    } catch {
-      continue;
+        const result = await parser.getText();
+        return result.text;
+    } finally {
+        await parser.destroy();
     }
-  }
-
-  return null;
 }
 
-type GeminiCallResult =
-  | { kind: "success"; data: any }
-  | { kind: "http_error"; status: number; data: any }
-  | { kind: "unreachable" }
-  | { kind: "invalid_response"; status: number };
-
-async function callGeminiWithRetries(
-  apiKey: string,
-  base64: string,
-  prompt: string
-): Promise<GeminiCallResult> {
-  const requestInit: RequestInit = {
-    method: "POST",
-    headers: {
-      "x-goog-api-key": apiKey,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            { inlineData: { mimeType: "application/pdf", data: base64 } },
-            { text: prompt },
-          ],
-        },
-      ],
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.2,
-      },
-    }),
-  };
-
-  for (let attempt = 0; attempt <= BACKOFFS_MS.length; attempt++) {
-    let res: Response;
-    try {
-      res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-        requestInit
-      );
-    } catch (err) {
-      console.error(err);
-      return { kind: "unreachable" };
-    }
-
-    let data: any;
-    try {
-      data = await res.json();
-    } catch {
-      console.error("Gemini returned a non-JSON response, status:", res.status);
-      return { kind: "invalid_response", status: res.status };
-    }
-
-    const temporary = res.status === 503 || res.status === 429;
-    if (temporary && attempt < BACKOFFS_MS.length) {
-      logGeminiNonOkResponse(MODEL, res.status, data);
-      await sleep(BACKOFFS_MS[attempt]!);
-      continue;
-    }
-
-    if (!res.ok) {
-      logGeminiNonOkResponse(MODEL, res.status, data);
-      return { kind: "http_error", status: res.status, data };
-    }
-
-    return { kind: "success", data };
-  }
-
-  return { kind: "unreachable" };
-}
 
 export async function POST(req: Request) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "Server is missing GEMINI_API_KEY" }, { status: 500 });
-  }
+    // read the form data
+    let formData: FormData;
+    try {
+        formData = await req.formData();
+    } catch {
+        return NextResponse.json({ error: "Request body must be form data" }, { status: 400 });
+    }
 
-  let formData: FormData;
-  try {
-    formData = await req.formData();
-  } catch {
-    return NextResponse.json({ error: "Request body must be form data" }, { status: 400 });
-  }
+    // validate the file
+    const file = formData.get("file");
+    if (!(file instanceof File)) {
+        return NextResponse.json({ error: "Please upload a file." }, { status: 400 });
+    }
 
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.type !== "application/pdf") {
-    return NextResponse.json({ error: "Please upload a PDF." }, { status: 400 });
-  }
+    const kind = getFileKind(file);
+    if (!kind) {
+        return NextResponse.json({ error: "Please upload a PDF or .txt file." }, { status: 400 });
+    }
 
-  if (file.size > MAX_PDF_BYTES) {
-    return NextResponse.json(
-      { error: "PDF must be 5 MB or smaller." },
-      { status: 400 }
-    );
-  }
+    if (file.size > MAX_FILE_BYTES) {
+        return NextResponse.json({ error: "File must be 5 MB or smaller." }, { status: 400 });
+    }
 
-  const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
-  const prompt =
-    "Extract info from this resume. Return JSON with exactly these string fields: " +
-    '"name", "email", "phone", "location", "linkedin" (URL), ' +
-    '"experience" (each job as: Title at Company, dates, then a short summary; separate jobs with a blank line), ' +
-    '"education" (each entry as: Degree, School, dates; one per line), ' +
-    '"skills" (comma-separated). ' +
-    "If something is not on the resume, use an empty string. Do not invent anything.";
+    // Mock mode: no Gemini
+    if (process.env.AI_MOCK === "true") {
+        return NextResponse.json({ fields: MOCK_RESUME_FIELDS });
+    }
 
-  const outcome = await callGeminiWithRetries(apiKey, base64, prompt);
+    // Real mode needs the key
+    if (!process.env.GEMINI_API_KEY) {
+        return NextResponse.json({ error: "Server is missing GEMINI_API_KEY" }, { status: 500 });
+    }
 
-  if (outcome.kind === "unreachable") {
-    return NextResponse.json({ error: "Could not reach gemini" }, { status: 502 });
-  }
+    // Turn the file into text
+    let text: string;
+    try {
+        text = kind === "pdf" ? await readPdfText(file) : await file.text();
+    } catch (err) {
+        console.error("Could not read uploaded file:", err);
+        return NextResponse.json({ error: "Could not read that file." }, { status: 400 });
+    }
 
-  if (outcome.kind === "invalid_response") {
-    return NextResponse.json(
-      { error: "Gemini returned an invalid response" },
-      { status: 502 }
-    );
-  }
+    // Scanned PDFs (images only) have no text to extract
+    if (text.trim() === "") {
+        return NextResponse.json({ error: NOT_RESUME_MESSAGE }, { status: 422 });
+    }
 
-  if (outcome.kind === "http_error") {
-    return NextResponse.json(
-      { error: "Gemini call failed" },
-      { status: outcome.status }
-    );
-  }
-
-  const text = outcome.data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (typeof text !== "string") {
-    console.error(outcome.data);
-    return NextResponse.json({ error: "Gemini returned no text" }, { status: 502 });
-  }
-
-  const parsed = parseResumeJson(text);
-  if (!parsed) {
-    console.error(text);
-    return NextResponse.json(
-      { error: "Gemini did not return valid JSON" },
-      { status: 502 }
-    );
-  }
-
-  const asString = (value: unknown) => (typeof value === "string" ? value : "");
-
-  return NextResponse.json({
-    name: asString(parsed.name),
-    email: asString(parsed.email),
-    phone: asString(parsed.phone),
-    location: asString(parsed.location),
-    linkedin: asString(parsed.linkedin),
-    experience: asString(parsed.experience),
-    education: asString(parsed.education),
-    skills: asString(parsed.skills),
-  });
+    // Run the sorter
+    try {
+        const fields = await extractResumeFields(text);
+        if (!fields) {
+            return NextResponse.json({ error: NOT_RESUME_MESSAGE }, { status: 422 });
+        }
+        return NextResponse.json({ fields });
+    } catch (err) {
+        if (err instanceof GeminiError) {
+            if (err.status === 503) {
+                return NextResponse.json({ error: "AI is busy, try again soon" }, { status: 503 });
+            }
+            if (err.status === 429) {
+                return NextResponse.json({ error: "AI quota reached, try again later" }, { status: 429 });
+            }
+            return NextResponse.json({ error: "AI returned an invalid response" }, { status: 502 });
+        }
+        console.error(err);
+        return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    }
 }
