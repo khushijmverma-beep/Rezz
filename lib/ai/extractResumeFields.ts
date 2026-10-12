@@ -6,7 +6,7 @@ import type {
 } from "@/lib/types/resume";
 import { callGemini, GeminiError } from "../gemini";
 
-// Mock data: used when AI_MOCK = True
+// Mock data: used when AI_MOCK = true
 export const MOCK_RESUME_FIELDS: Partial<ResumeData> = {
     firstName: "Jordan",
     lastName: "Rivera",
@@ -108,8 +108,7 @@ ${text}
 </input>`;
 }
 
-// ---------- 2. Parse Gemini's reply ----------
-
+// Parse Gemini's reply
 function parseJson(text: string): Record<string, unknown> | null {
     const candidates = [
         text.trim(),

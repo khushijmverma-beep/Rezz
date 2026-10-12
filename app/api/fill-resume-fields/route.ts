@@ -6,7 +6,7 @@ const MAX_CHARS = 8000;
 const NOT_RESUME_MESSAGE = "Please try again with more specific info";
 
 export async function POST(req: Request) {
-    // 1. Parse the body
+    // Parse the body
     let body: unknown;
     try {
         body = await req.json();
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Request body must be JSON" }, { status: 400 });
     }
 
-    // 2. Validate text
+    // Validate text
     const text = (body as { text?: unknown })?.text;
     if (typeof text !== "string" || text.trim() === "") {
         return NextResponse.json({ error: "Please enter some text." }, { status: 400 });
