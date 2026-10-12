@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ResumeData } from "@/lib/types/resume";
+import styles from "./ResumeDetailsChat.module.css";
 
 const MAX_CHARS = 8000;
 
@@ -105,27 +106,39 @@ export default function ResumeDetailsChat({ onFill }: Props) {
   }
 
   return (
-    <section>
-      <h2>Paste your info</h2>
+    <section className={styles.panel}>
+      <h2 className={styles.heading}>Paste your info</h2>
 
-      <div ref={scrollRef} style={{ height: 120, overflowY: "auto" }}>
+      <div ref={scrollRef} className={styles.messages}>
         {messages.map((message) => (
-          <div key={message.id}>{message.text}</div>
+          <div
+            key={message.id}
+            className={`${styles.message} ${message.role === "user" ? styles.userMessage : styles.assistantMessage
+              }`}
+          >
+            {message.text}
+          </div>
         ))}
       </div>
 
       <textarea
+        className={styles.textarea}
         placeholder="Paste your resume info, LinkedIn About section, or anything you want added"
         value={text}
         onChange={(event) => setText(event.target.value)}
         onKeyDown={handleKeyDown}
       />
 
-      <div>
-        <span>
+      <div className={styles.footer}>
+        <span className={tooLong ? styles.counterOver : styles.counter}>
           {text.length} / {MAX_CHARS.toLocaleString()}
         </span>
-        <button type="button" onClick={send} disabled={!canSend}>
+        <button
+          type="button"
+          className={styles.sendButton}
+          onClick={send}
+          disabled={!canSend}
+        >
           Send
         </button>
       </div>
