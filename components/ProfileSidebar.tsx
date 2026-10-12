@@ -1,144 +1,97 @@
-"use client"
+"use client";
 
-import React, { useState, useRef } from 'react';
-import Link from "next/link"
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { getAuth, onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { Home, FileText, Info, LogOut } from "lucide-react";
+import { app } from "@/lib/firebase";
+import Avatar from "@/components/Avatar";
 
-
-const input =
-  "w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none";
+// change these hrefs if your routes are named differently
+const NAV = [
+  { href: "/dashboard", label: "Home", Icon: Home },
+  { href: "/resume-details", label: "Resume Details", Icon: FileText },
+  { href: "/about", label: "About", Icon: Info },
+];
 
 export default function Sidebar() {
-    const [open, setOpen] = useState(false); 
-    const [file, setFile] = useState<File | null>(null);
-    const [error, setError] = useState("");
-    const fileInputRef = useRef<HTMLInputElement>(null);
+  const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const pathname = usePathname();
+  const router = useRouter();
 
-    const [loading, setLoading] = useState(false);
+  useEffect(() => onAuthStateChanged(getAuth(app), setUser), []);
 
-    // profile layout for the five inputs
-    const [profile, setProfile] = useState({
-        name: "",
-        email: "",
-        phone: "",
-        location: "",
-        linkedin: "",
-    })
+  const handleLogout = async () => {
+    await signOut(getAuth(app));
+    setOpen(false);
+    router.push("/"); // landing page
+  };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => 
-    setProfile({ ...profile, [e.target.name]: e.target.value}); 
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
-    // extract text from PDF
-    const extractText = async (pdfFile: File) => {
-        setLoading(true);
-        setError("");
+  const tabClass = (href: string) =>
+    `flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
+      isActive(href) ? "bg-black text-white!" : "text-gray-800! hover:bg-gray-200"
+    }`;
 
-        const formData = new FormData();
-        formData.append("file", pdfFile);
+  // logged out: no sidebar and no hamburger
+  if (!user) return null;
 
-        try {
-            const res = await fetch("/api/parse-resume", { method: "POST", body: formData });
-            const data = await res.json();
+  const name = user.displayName || user.email?.split("@")[0] || "";
 
-            if (!res.ok) {
-                setError(data.error ?? "Something went wrong.");
-                return;
-            }
+  return (
+    <div>
+      <div
+        onClick={() => setOpen(false)}
+        className={`fixed inset-0 z-30 bg-transparent transition-opacity duration-300 ${
+          open ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      />
 
-            setProfile({
-                name: data.name,
-                email: data.email,
-                phone: data.phone,
-                location: data.location,
-                linkedin: data.linkedin,
-        });
-
-        localStorage.setItem(
-            "resumeInfo",
-            JSON.stringify({
-                experience: data.experience,
-                education: data.education,
-                skills: data.skills,
-            })
-        );
-    } catch {
-        setError("Network error. Please try again.");
-    } finally {
-        setLoading(false);
-    }
-};
-
-    // handles the file, validates if it's a PDF, and if anything changed
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const selected = e.target.files?.[0]
-
-        if (!selected) return; 
-
-        if (selected.type !== "application/pdf") {
-            setError("Invalid format, please use a PDF")
-            setFile(null);
-            return;
-        }
-
-        setError("");
-        setFile(selected);
-        extractText(selected);
-
-    }
-
-    return (
-        <div>
-            <div onClick={() => setOpen(false)}
-                className={`fixed inset-0 z-30 bg-transparent transition-opacity duration-300 ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
-/>
-            <aside id="sidebar"
-            className = {`fixed top-0 left-0 z-40 h-full w-80 bg-gray-100 p-4 shadow-2xl
-            transform transition-transform duration-300 ease-in-out
-            ${open ? "translate-x-0" : "-translate-x-full"}`}>
-             
-            <h2 className = "mb-2 text-lg font-semibold">Profile</h2>
-            <div className="space-y-2">
-                <input name="name" value={profile.name} onChange={handleChange} placeholder="Name" className={input} />
-                <input name="email" type="email" value={profile.email} onChange={handleChange} placeholder="Email" className={input} />
-                <input name="phone" type="tel" value={profile.phone} onChange={handleChange} placeholder="Phone" className={input} />
-                <input name="location" value={profile.location} onChange={handleChange} placeholder="Location" className={input} />
-                <input name="linkedin" type="url" value={profile.linkedin} onChange={handleChange} placeholder="LinkedIn URL" className={input} />
-            </div>
-            <Link href="/edit" onClick ={() => setOpen(false)} className= "text-center block rounded bg-blue-600 px-4 py-2.5 mt-4 text-sm text-white! hover:bg-blue-700"> Edit Resume Information </Link>
-            {file && (
-                <p className="mt-3 truncate text-sm text-gray-700">Selected: {file.name}</p>
-                
-            )}
-            {loading && <p className="mt-2 text-sm text-gray-500">Reading resume…</p>}
-            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
- 
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/pdf"
-                onChange={handleFileChange}
-                className="hidden"
-            />
-
-            <button
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full cursor-pointer rounded bg-blue-600 px-4 py-2 mt-4  text-white hover:bg-blue-700"
-            >
-                Upload Resume PDF
-            </button>
-          </aside>
-
-          <main className = {'p-4 transition-[margin] duration-300 ease-in-out ${open ? "ml-64" : "ml-0"}'}>
-            <button 
-            onClick = {() => setOpen((o) => !o)} 
-            aria-expanded={open}
-            aria-controls="sidebar"
-            className="flex cursor-pointer flex-col gap-1.5 rounded-full bg-transparent p-3 hover:bg-transparent"
-                > 
-                <span className="block h-0.5 w-7 rounded bg-black" />
-                <span className="block h-0.5 w-7 rounded bg-black" />
-                <span className="block h-0.5 w-7 rounded bg-black" />               
-            </button>
-          </main>
+      <aside
+        id="sidebar"
+        className={`fixed top-0 left-0 z-40 flex h-full w-72 flex-col bg-gray-100 p-4 shadow-2xl transform transition-transform duration-300 ease-in-out ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <p className="mb-5 text-3xl font-bold">Rezz</p>
+        <div className="mb-4 flex items-center gap-3">
+          <Avatar name={name} size={48} />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">{name}</p>
+            <p className="truncate text-xs text-gray-600">{user.email}</p>
+          </div>
         </div>
-    )
+
+        <nav className="flex flex-col gap-1">
+          {NAV.map(({ href, label, Icon }) => (
+            <Link key={href} href={href} onClick={() => setOpen(false)} className={tabClass(href)}>
+              <Icon size={18} /> {label}
+            </Link>
+          ))}
+        </nav>
+
+        <button
+          onClick={handleLogout}
+          className="mt-auto flex w-full cursor-pointer items-center gap-3 rounded px-3 py-2 text-left text-sm text-black hover:bg-gray-200"
+        >
+          <LogOut size={18} /> Log out
+        </button>
+      </aside>
+
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-controls="sidebar"
+        aria-label="Toggle menu"
+        className="fixed top-3 left-3 z-20 flex cursor-pointer flex-col gap-1.5 rounded-full bg-transparent p-3"
+      >
+        <span className="block h-0.5 w-7 rounded bg-black" />
+        <span className="block h-0.5 w-7 rounded bg-black" />
+        <span className="block h-0.5 w-7 rounded bg-black" />
+      </button>
+    </div>
+  );
 }
