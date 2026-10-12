@@ -5,6 +5,23 @@ import type { ResumeData } from "@/lib/types/resume";
 
 const MAX_CHARS = 8000;
 
+const FIELD_LABELS: Record<keyof ResumeData, string> = {
+  firstName: "First name",
+  lastName: "Last name",
+  email: "Email",
+  phone: "Phone number",
+  location: "Location",
+  linkedin: "LinkedIn",
+  github: "GitHub",
+  website: "Website",
+  summary: "Summary",
+  experience: "Experience",
+  education: "Education",
+  skills: "Skills",
+  projects: "Projects",
+  awards: "Awards",
+};
+
 type Message = {
   id: number;
   role: "user" | "assistant";
@@ -54,7 +71,15 @@ export default function ResumeDetailsChat({ onFill }: Props) {
       if (res.status === 422) {
         reply = "Please try again with more specific info.";
       } else if (res.ok) {
-        reply = "Filled in: (coming next)";
+        const data = (await res.json()) as { fields: Partial<ResumeData> };
+        const fields = data.fields;
+
+        const keys = Object.keys(fields) as (keyof ResumeData)[];
+        const labels = keys.map((key) => FIELD_LABELS[key]);
+
+        reply = `Filled in: ${labels.join(", ")}. Review the fields, then save.`;
+
+        onFill(fields);
       }
     } catch (error) {
       console.log("request failed:", error);
