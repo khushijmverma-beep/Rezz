@@ -25,8 +25,6 @@ import { auth } from "@/lib/firebase";
 
 // Convert Firebase errors into friendly messages.
 function getAuthErrorMessage(error: unknown): string | null {
-  console.error(error);
-
   const code =
     typeof error === "object" &&
     error !== null &&
@@ -64,6 +62,7 @@ function getAuthErrorMessage(error: unknown): string | null {
       return "Network error. Check your connection and try again.";
 
     default:
+      console.error(error);
       return "Something went wrong. Please try again.";
   }
 }
