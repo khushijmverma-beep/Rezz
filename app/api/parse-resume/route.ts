@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { PDFParse } from "pdf-parse";
 import { extractResumeFields, MOCK_RESUME_FIELDS } from "@/lib/ai/extractResumeFields";
 import { GeminiError } from "@/lib/gemini";
+import { hasConfiguredAIProvider } from "@/lib/llm";
 
 export const runtime = "nodejs";
 
@@ -59,9 +60,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ fields: MOCK_RESUME_FIELDS });
     }
 
-    // Real mode needs the key
-    if (!process.env.GEMINI_API_KEY) {
-        return NextResponse.json({ error: "Server is missing GEMINI_API_KEY" }, { status: 500 });
+    if (!hasConfiguredAIProvider()) {
+        return NextResponse.json({ error: "AI isn't configured" }, { status: 500 });
     }
 
     // Turn the file into text

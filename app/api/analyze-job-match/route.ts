@@ -4,7 +4,7 @@ import type {
     SkillGap,
     SuggestedRewording,
 } from "@/lib/types/job-match";
-import { callLLM } from "@/lib/llm";
+import { callLLM, hasConfiguredAIProvider } from "@/lib/llm";
 import { GeminiError } from "@/lib/gemini";
 
 type GeminiJobMatch = Omit<JobMatchResult, "overallFit"> & {
@@ -175,9 +175,8 @@ function responseForLLMError(err: GeminiError): Response {
 
 
 export async function POST(req: Request) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        return Response.json({ error: "Server is missing GEMINI_API_KEY" }, { status: 500 });
+    if (!hasConfiguredAIProvider()) {
+        return Response.json({ error: "AI isn't configured" }, { status: 500 });
     }
 
     let body: unknown;

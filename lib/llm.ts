@@ -25,6 +25,18 @@ function providerOrder(): string[] {
     return providers.length > 0 ? providers : ["groq", "gemini"];
 }
 
+const PROVIDER_ENV_KEYS: Record<string, string> = {
+    groq: "GROQ_API_KEY",
+    gemini: "GEMINI_API_KEY",
+};
+
+export function hasConfiguredAIProvider(): boolean {
+    return providerOrder().some((provider) => {
+        const envKey = PROVIDER_ENV_KEYS[provider];
+        return Boolean(envKey && process.env[envKey]);
+    });
+}
+
 function groqModel(): string {
     const configured = process.env.GROQ_MODEL?.trim();
     return configured || DEFAULT_GROQ_MODEL;
