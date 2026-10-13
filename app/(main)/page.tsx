@@ -8,24 +8,14 @@ import {
   createDraft,
   deleteDraft,
   listDrafts,
-  type ResumeDraft,
+  type Draft,
 } from "@/lib/drafts";
+import { emptyResumeData, type ResumeData } from "@/lib/types/resume";
 import TemplateCard from "@/components/TemplateCard";
 import ResumeCard from "@/components/ResumeCard";
 import NewResumeModal from "@/components/NewResumeModal";
 
 type TemplateId = "blank" | "modern" | "professional" | "simple";
-
-type ParsedResume = {
-  name: string;
-  email: string;
-  phone: string;
-  location: string;
-  linkedin: string;
-  experience: string;
-  education: string;
-  skills: string;
-};
 
 export default function Home() {
   const router = useRouter();
@@ -35,7 +25,7 @@ export default function Home() {
   const [selectedTemplate, setSelectedTemplate] =
     useState<TemplateId>("blank");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [drafts, setDrafts] = useState<ResumeDraft[]>([]);
+  const [drafts, setDrafts] = useState<Draft[]>([]);
   const [loadingDrafts, setLoadingDrafts] = useState(true);
   const [pageError, setPageError] = useState("");
 
@@ -94,7 +84,7 @@ export default function Home() {
       throw new Error("Please log in before creating a resume.");
     }
 
-    let data: ParsedResume | Record<string, never> = {};
+    let data: ResumeData = emptyResumeData;
 
     if (details.startOption === "upload") {
       if (!details.file) {
@@ -121,7 +111,11 @@ export default function Home() {
         );
       }
 
-      data = result as ParsedResume;
+      if (!result.fields || typeof result.fields !== "object") {
+        throw new Error("Could not parse the uploaded resume.");
+      }
+
+      data = result.fields as ResumeData;
     }
 
     const resumeId = await createDraft(userId, {
@@ -213,9 +207,7 @@ export default function Home() {
                 resumeId={draft.id}
                 name={draft.title}
                 templateId={draft.templateId}
-                updatedAt={
-                  draft.updatedAt?.toDate().toLocaleDateString() ?? "Just now"
-                }
+                updatedAt={new Date(draft.updatedAt).toLocaleDateString()}
                 onDelete={handleDelete}
               />
             ))}

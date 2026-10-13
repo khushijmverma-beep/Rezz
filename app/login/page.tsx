@@ -1,7 +1,18 @@
+
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import {
+  Suspense,
+  useEffect,
+  useState,
+  type FormEvent,
+} from "react";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
+import Link from "next/link";
+
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -9,11 +20,11 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
 } from "firebase/auth";
+
 import { auth } from "@/lib/firebase";
 
+// Convert Firebase errors into friendly messages.
 function getAuthErrorMessage(error: unknown): string | null {
-  console.error(error);
-
   const code =
     typeof error === "object" &&
     error !== null &&
@@ -27,40 +38,62 @@ function getAuthErrorMessage(error: unknown): string | null {
     case "auth/wrong-password":
     case "auth/user-not-found":
       return "Incorrect email or password.";
+
     case "auth/email-already-in-use":
       return "An account with this email already exists. Try logging in instead.";
+
     case "auth/weak-password":
       return "Password must be at least 6 characters.";
+
     case "auth/invalid-email":
       return "Please enter a valid email address.";
+
     case "auth/popup-closed-by-user":
     case "auth/cancelled-popup-request":
       return null;
+
     case "auth/popup-blocked":
       return "Your browser blocked the sign-in popup. Allow popups and try again.";
+
     case "auth/too-many-requests":
       return "Too many attempts. Please wait a few minutes and try again.";
+
     case "auth/network-request-failed":
       return "Network error. Check your connection and try again.";
+
     default:
+      console.error(error);
       return "Something went wrong. Please try again.";
   }
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [isLogin, setIsLogin] = useState(true);
+  // Read the mode from the URL.
+  // /login?mode=signup opens Sign Up.
+  // /login opens Log In.
+  const isSignupMode = searchParams.get("mode") === "signup";
+
+  const [isLogin, setIsLogin] = useState(!isSignupMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
+  // Update the selected tab when the URL changes.
+  useEffect(() => {
+    setIsLogin(!isSignupMode);
+    setError("");
+  }, [isSignupMode]);
+
+  // Check whether the user is already logged in.
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        router.replace("/dashboard");
+        router.replace("/");
         return;
       }
 
@@ -70,6 +103,7 @@ export default function LoginPage() {
     return unsubscribe;
   }, [router]);
 
+  // Email/password login and signup.
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -83,9 +117,10 @@ export default function LoginPage() {
         await createUserWithEmailAndPassword(auth, email, password);
       }
 
-      router.replace("/dashboard");
+      router.replace("/");
     } catch (error) {
       const message = getAuthErrorMessage(error);
+
       if (message) {
         setError(message);
       }
@@ -94,6 +129,7 @@ export default function LoginPage() {
     }
   }
 
+  // Google login and signup.
   async function handleGoogleLogin() {
     setError("");
     setLoading(true);
@@ -103,9 +139,10 @@ export default function LoginPage() {
 
       await signInWithPopup(auth, provider);
 
-      router.replace("/dashboard");
+      router.replace("/");
     } catch (error) {
       const message = getAuthErrorMessage(error);
+
       if (message) {
         setError(message);
       }
@@ -114,10 +151,13 @@ export default function LoginPage() {
     }
   }
 
+  // Loading screen while Firebase checks authentication.
   if (checkingAuth) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-gray-100">
-        <p className="text-sm text-gray-500">Loading...</p>
+        <p className="text-sm text-gray-500">
+          Loading...
+        </p>
       </main>
     );
   }
@@ -125,6 +165,8 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
+
+        {/* Title */}
         <h1 className="mb-2 text-center text-3xl font-bold text-gray-900">
           Welcome to Rezz
         </h1>
@@ -135,12 +177,15 @@ export default function LoginPage() {
             : "Create an account to get started."}
         </p>
 
+        {/* Login and Signup Tabs */}
         <div className="mb-6 flex rounded-lg bg-gray-100 p-1">
+
           <button
             type="button"
             onClick={() => {
               setIsLogin(true);
               setError("");
+              router.replace("/login");
             }}
             className={`w-1/2 rounded-md px-4 py-2 text-sm font-medium ${
               isLogin
@@ -156,6 +201,7 @@ export default function LoginPage() {
             onClick={() => {
               setIsLogin(false);
               setError("");
+              router.replace("/login?mode=signup");
             }}
             className={`w-1/2 rounded-md px-4 py-2 text-sm font-medium ${
               !isLogin
@@ -165,9 +211,12 @@ export default function LoginPage() {
           >
             Sign Up
           </button>
+
         </div>
 
+        {/* Email and Password Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+
           <div>
             <label
               htmlFor="email"
@@ -207,12 +256,14 @@ export default function LoginPage() {
             />
           </div>
 
+          {/* Error Message */}
           {error && (
             <p className="text-sm text-red-600">
               {error}
             </p>
           )}
 
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
@@ -224,14 +275,19 @@ export default function LoginPage() {
                 ? "Log In"
                 : "Create Account"}
           </button>
+
         </form>
 
+        {/* Divider */}
         <div className="my-6 flex items-center gap-3">
           <div className="h-px flex-1 bg-gray-200" />
-          <span className="text-sm text-gray-400">OR</span>
+          <span className="text-sm text-gray-400">
+            OR
+          </span>
           <div className="h-px flex-1 bg-gray-200" />
         </div>
 
+        {/* Google Authentication */}
         <button
           type="button"
           onClick={handleGoogleLogin}
@@ -240,7 +296,34 @@ export default function LoginPage() {
         >
           Continue with Google
         </button>
+
+        {/* Back Button */}
+        <Link
+          href="/"
+          className="mt-6 block text-center text-sm text-gray-500 hover:text-black"
+        >
+          ← Back
+        </Link>
+
       </div>
     </main>
   );
 }
+
+// Suspense is required for useSearchParams in Next.js.
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-gray-100">
+          <p className="text-sm text-gray-500">
+            Loading...
+          </p>
+        </main>
+      }
+    >
+      <LoginContent />
+    </Suspense>
+  );
+}
+

@@ -66,21 +66,45 @@ export default function AnalyzePanel({ resumeText }: AnalyzePanelProps) {
   }
 
   if (result) {
+    const score = Math.max(0, Math.min(100, result.overallFit.matchScore));
+    const scoreClass =
+      result.overallFit.rating === "strong"
+        ? styles.strong
+        : result.overallFit.rating === "medium"
+          ? styles.medium
+          : styles.weak;
+
     return (
       <section className={styles.panel} aria-live="polite">
         <div className={styles.resultView}>
           <h2 className={styles.heading}>Result</h2>
           <div className={styles.resultContent}>
-            <div className={styles.fitSummary}>
-              <p className={styles.fitRating}>
+            <section className={styles.scoreCard} aria-label="Overall fit score">
+              <div className={styles.scoreHeader}>
                 <span className={styles.fitLabel}>Overall fit</span>
-                <strong>{result.overallFit.rating}</strong>
-                <span className={styles.fitScore}>
-                  {result.overallFit.matchScore}/100
+                <span className={`${styles.rating} ${scoreClass}`}>
+                  {result.overallFit.rating}
                 </span>
+              </div>
+              <p className={styles.scoreNumber}>
+                {score}
+                <span>/100</span>
               </p>
+              <div
+                className={styles.scoreTrack}
+                role="progressbar"
+                aria-label="Resume match score"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={score}
+              >
+                <div
+                  className={`${styles.scoreProgress} ${scoreClass}`}
+                  style={{ width: `${score}%` }}
+                />
+              </div>
               <p className={styles.fitText}>{result.overallFit.summary}</p>
-            </div>
+            </section>
 
             <section className={styles.resultSection}>
               <h3 className={styles.sectionHeading}>Missing keywords</h3>

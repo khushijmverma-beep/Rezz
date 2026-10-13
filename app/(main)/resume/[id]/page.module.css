@@ -1,51 +1,81 @@
 .resumeView {
   display: grid;
-  grid-template-columns: 250px minmax(0, 8.5in);
+  grid-template-columns: minmax(0, 1fr) 22rem;
   align-items: start;
-  justify-content: center;
   gap: 1.5rem;
   min-height: calc(100vh - 7rem);
-  padding: 2rem 1rem;
+  padding: 1.5rem;
   color: #202124;
   background: #f4f5f7;
 }
 
-.sidebar {
-  display: grid;
-  gap: 1rem;
-  width: 100%;
+.workspace {
+  min-width: 0;
 }
 
-.dashboardLink {
-  display: flex;
+.toolbar {
+  display: grid;
+  grid-template-columns: auto minmax(8rem, 1fr) auto;
   align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 2.75rem;
-  padding: 0.7rem 1rem;
-  border: 1px solid #d5d9e0;
-  border-radius: 0.45rem;
-  background: #fff;
+  gap: 0.5rem 1rem;
+  padding: 0 0 1rem;
+}
+
+.homeLink {
+  grid-row: 1 / span 2;
   color: #293449;
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;
-  transition: background-color 150ms ease, border-color 150ms ease;
 }
 
-.dashboardLink:hover {
-  border-color: #aeb7c5;
-  background: #f8fafc;
+.homeLink:hover {
+  text-decoration: underline;
 }
 
-.dashboardLink:focus-visible {
+.titleLabel {
+  grid-column: 2;
+  color: #687386;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.titleInput {
+  grid-column: 2;
+  width: 100%;
+  min-width: 0;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #d5d9e0;
+  border-radius: 0.4rem;
+  background: #fff;
+  color: #202124;
+  font: inherit;
+}
+
+.titleInput:focus-visible {
   outline: 3px solid #91b7f4;
-  outline-offset: 3px;
+  outline-offset: 2px;
+}
+
+.saveStatus {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  color: #687386;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.paperScroller {
+  overflow-x: auto;
+  padding: 0.5rem;
+  background: #e8ebef;
 }
 
 .paper {
-  width: 100%;
+  width: min(8.5in, 100%);
+  min-width: 36rem;
   min-height: 11in;
+  margin: 0 auto;
   padding: 0.8in 0.85in;
   border: 1px solid #e2e5e9;
   background: #fff;
@@ -72,6 +102,7 @@
   color: #1d2939;
   font-size: clamp(1.65rem, 4vw, 2.1rem);
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .contactDetails {
@@ -84,13 +115,9 @@
   font-size: 0.94rem;
 }
 
-.contactDetails p,
-.entry p {
+.contactDetails p {
   margin: 0;
-}
-
-.contactDetails strong {
-  color: #263247;
+  overflow-wrap: anywhere;
 }
 
 .resumeSections {
@@ -109,37 +136,135 @@
 }
 
 .entry {
-  padding-left: 0.9rem;
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding-left: 1.8rem;
   border-left: 2px solid #d8e3f4;
   color: #4b5565;
   line-height: 1.65;
+  overflow-wrap: anywhere;
 }
 
-.entry h3 {
-  margin: 0 0 0.15rem;
-  color: #273449;
-  font-size: 0.98rem;
-  font-weight: 700;
+.sidebar {
+  position: sticky;
+  top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
 }
 
-@media (max-width: 1120px) {
-  .resumeView {
+.messageView {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  padding: 4rem 1rem;
+  color: #202124;
+}
+
+.messageView h1,
+.messageView p {
+  margin: 0;
+}
+
+.messageView a {
+  color: #2563eb;
+}
+
+.retryButton {
+  padding: 0.6rem 1rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+}
+
+.loadingView {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  gap: 1.5rem;
+  min-height: calc(100vh - 7rem);
+  padding: 1.5rem;
+  background: #f4f5f7;
+}
+
+.skeletonToolbar,
+.skeletonPaper,
+.skeletonPanel {
+  border-radius: 0.5rem;
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.skeletonToolbar {
+  height: 5rem;
+  margin-bottom: 1rem;
+}
+
+.skeletonPaper {
+  width: min(8.5in, 100%);
+  min-width: 36rem;
+  min-height: 11in;
+  margin: 0 auto;
+}
+
+.skeletonPanel {
+  min-height: 22rem;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 1050px) {
+  .resumeView,
+  .loadingView {
     grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
-    min-height: 0;
-    padding: 1rem 0.5rem;
   }
 
   .sidebar {
-    width: min(100%, 32rem);
-    justify-self: center;
+    position: static;
+  }
+
+  .skeletonPanel {
+    min-height: 12rem;
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 600px) {
+  .resumeView,
+  .loadingView {
+    gap: 1rem;
+    padding: 1rem 0.5rem;
+  }
+
+  .toolbar {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .homeLink {
+    grid-row: auto;
+  }
+
+  .titleLabel,
+  .titleInput {
+    grid-column: 1 / -1;
+  }
+
+  .saveStatus {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
   .paper {
-    min-height: 0;
-    padding: clamp(1.5rem, 7vw, 3rem) clamp(1.25rem, 7vw, 2.5rem);
+    min-width: 34rem;
+    padding: 2rem;
   }
 }
 
@@ -164,12 +289,20 @@
     background: #fff;
   }
 
+  .toolbar,
   .sidebar {
     display: none;
   }
 
+  .paperScroller {
+    overflow: visible;
+    padding: 0;
+    background: #fff;
+  }
+
   .paper {
     width: 8.5in;
+    min-width: 0;
     min-height: 11in;
     margin: 0;
     border: 0;
