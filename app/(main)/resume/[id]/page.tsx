@@ -14,6 +14,28 @@ import styles from "./page.module.css";
 type SaveStatus = "saving" | "saved" | "retrying";
 type DraftContent = { title: string; data: ResumeData };
 
+const resumeKeys = Object.keys(emptyResumeData) as (keyof ResumeData)[];
+
+// Each field sends a full resume copied from the data it last rendered. When two
+// fields blur before the next render, keep only the keys that actually changed.
+function assignResumeKey<K extends keyof ResumeData>(
+  target: ResumeData,
+  key: K,
+  value: ResumeData[K],
+) {
+  target[key] = value;
+}
+
+function mergeResumeChange(latest: ResumeData, rendered: ResumeData, next: ResumeData): ResumeData {
+  const merged = { ...latest };
+  for (const key of resumeKeys) {
+    if (!Object.is(next[key], rendered[key])) {
+      assignResumeKey(merged, key, next[key]);
+    }
+  }
+  return merged;
+}
+
 function LoadingSkeleton() {
   return (
     <div className={styles.loadingView} aria-label="Loading resume">
@@ -37,14 +59,24 @@ export default function ResumeDetailPage() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const titleRef = useRef("");
   const dataRef = useRef<ResumeData>(emptyResumeData);
+  const renderedDataRef = useRef<ResumeData>(emptyResumeData);
   const creatingDraftRef = useRef(false);
   const savedContentRef = useRef<string | null>(null);
   const savePromiseRef = useRef<Promise<void> | null>(null);
   const [createRetry, setCreateRetry] = useState(0);
 
   useEffect(() => {
+    renderedDataRef.current = data;
     dataRef.current = data;
   }, [data]);
+
+  const handleDataChange = (next: ResumeData) => {
+    setData((prev) => {
+      const merged = mergeResumeChange(prev, renderedDataRef.current, next);
+      dataRef.current = merged;
+      return merged;
+    });
+  };
 
   const loadDraft = useCallback(async () => {
     if (!user || !id || id === "new") return;
@@ -56,6 +88,7 @@ export default function ResumeDetailPage() {
       const loadedData = loadedDraft?.data ?? emptyResumeData;
       titleRef.current = loadedTitle;
       dataRef.current = loadedData;
+      renderedDataRef.current = loadedData;
       savedContentRef.current = JSON.stringify({
         title: loadedTitle,
         data: loadedData,
@@ -149,6 +182,12 @@ export default function ResumeDetailPage() {
         await promise;
       } finally {
         savePromiseRef.current = null;
+      }
+      if (
+        serializedSnapshot !==
+        JSON.stringify({ title: titleRef.current, data: dataRef.current })
+      ) {
+        continue;
       }
       return;
     }
@@ -261,7 +300,7 @@ export default function ResumeDetailPage() {
         </header>
         <div className={styles.paperScroller}>
           {TemplateComponent ? (
-            <TemplateComponent data={data} editable onChange={setData} />
+            <TemplateComponent data={data} editable onChange={handleDataChange} />
           ) : (
             <p role="alert">This resume uses an unsupported template.</p>
           )}
