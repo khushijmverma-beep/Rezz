@@ -170,7 +170,10 @@ function responseForLLMError(err: GeminiError): Response {
     if (err.message === "Gemini returned no text") {
         return Response.json({ error: "Gemini returned no text" }, { status: 502 });
     }
-    return Response.json({ error: "Gemini call failed" }, { status: err.status });
+    return Response.json(
+        { error: "The AI service had a problem. Please try again." },
+        { status: err.status === 429 || err.status === 503 ? err.status : 502 }
+    );
 }
 
 

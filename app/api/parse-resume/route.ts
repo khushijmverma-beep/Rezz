@@ -93,7 +93,13 @@ export async function POST(req: Request) {
             if (err.status === 429) {
                 return NextResponse.json({ error: "AI quota reached, try again later" }, { status: 429 });
             }
-            return NextResponse.json({ error: "AI returned an invalid response" }, { status: 502 });
+            if (err.message === "Gemini did not return valid JSON") {
+                return NextResponse.json({ error: "AI returned an invalid response" }, { status: 502 });
+            }
+            return NextResponse.json(
+                { error: "The AI service had a problem. Please try again." },
+                { status: 502 }
+            );
         }
         console.error(err);
         return NextResponse.json({ error: "Something went wrong" }, { status: 500 });

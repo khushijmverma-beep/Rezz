@@ -109,12 +109,39 @@ ${text}
 </input>`;
 }
 
+function firstCompleteObject(text: string): string | null {
+    const start = text.indexOf("{");
+    if (start < 0) return null;
+
+    let depth = 0;
+    let inString = false;
+    let escape = false;
+    for (let i = start; i < text.length; i++) {
+        const ch = text[i];
+        if (inString) {
+            if (escape) escape = false;
+            else if (ch === "\\") escape = true;
+            else if (ch === '"') inString = false;
+            continue;
+        }
+        if (ch === '"') inString = true;
+        else if (ch === "{") depth++;
+        else if (ch === "}") {
+            depth--;
+            if (depth === 0) return text.slice(start, i + 1);
+        }
+    }
+    return null;
+}
+
 // Parse Gemini's reply
 function parseJson(text: string): Record<string, unknown> | null {
     const candidates = [
         text.trim(),
         text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, ""),
     ];
+    const complete = firstCompleteObject(text);
+    if (complete) candidates.push(complete);
     const objectMatch = text.match(/\{[\s\S]*\}/);
     if (objectMatch) candidates.push(objectMatch[0]);
 
@@ -191,7 +218,7 @@ export async function extractResumeFields(
 
     const parsed = parseJson(reply);
     if (!parsed) {
-        console.error("extractResumeFields: could not parse Gemini reply:", reply);
+        console.error("extractResumeFields: could not parse model reply");
         throw new GeminiError(502, "Gemini did not return valid JSON");
     }
 
