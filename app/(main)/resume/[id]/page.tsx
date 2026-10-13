@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import AnalyzePanel from "@/components/AnalyzePanel";
-import { getDraft, updateDraft, type Draft } from "@/lib/drafts";
+import { createDraft, getDraft, updateDraft, type Draft } from "@/lib/drafts";
 import { resumeToText } from "@/lib/resumeToText";
+import { getTemplate } from "@/lib/templates";
 import type { ResumeData } from "@/lib/types/resume";
 import { useAuth } from "@/lib/useAuth";
 import styles from "./page.module.css";
@@ -13,52 +14,19 @@ import styles from "./page.module.css";
 type SaveStatus = "saving" | "saved" | "retrying";
 type DraftContent = { title: string; data: ResumeData };
 
-function ResumePaper({
-  data,
-  title,
-  templateId,
-}: {
-  data: ResumeData;
-  title: string;
-  templateId: string;
-}) {
-  const groups = resumeToText(data)
-    .split(/\n\n/)
-    .filter(Boolean);
-  const [header = "", ...sections] = groups;
-  const [name = "", ...contact] = header.split("\n");
-
-  return (
-    <article className={styles.paper} aria-labelledby="resume-title">
-      <header className={styles.resumeHeader}>
-        <p className={styles.pageLabel}>{templateId} resume</p>
-        <h1 id="resume-title">{name || title}</h1>
-        {contact.length > 0 && (
-          <div className={styles.contactDetails}>
-            {contact.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </div>
-        )}
-      </header>
-      <div className={styles.resumeSections}>
-        {sections.map((section) => {
-          const [heading = "", ...items] = section.split("\n");
-          return (
-            <section className={styles.resumeSection} key={heading}>
-              <h2>{heading}</h2>
-              <ul className={styles.entry}>
-                {items.map((item) => (
-                  <li key={item.replace(/^- /, "")}>{item.replace(/^- /, "")}</li>
-                ))}
-              </ul>
-            </section>
-          );
-        })}
-      </div>
-    </article>
-  );
-}
+const emptyResumeData: ResumeData = {
+  name: "",
+  email: "",
+  phone: "",
+  location: "",
+  website: "",
+  summary: "",
+  experience: [],
+  education: [],
+  skills: [],
+  projects: [],
+  awards: [],
+};
 
 function LoadingSkeleton() {
   return (
@@ -73,30 +41,33 @@ function LoadingSkeleton() {
 export default function ResumeDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
+  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [title, setTitle] = useState("");
-  const [data, setData] = useState<ResumeData>({});
+  const [data, setData] = useState<ResumeData>(emptyResumeData);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const titleRef = useRef("");
-  const dataRef = useRef<ResumeData>({});
+  const dataRef = useRef<ResumeData>(emptyResumeData);
+  const creatingDraftRef = useRef(false);
   const savedContentRef = useRef<string | null>(null);
   const savePromiseRef = useRef<Promise<void> | null>(null);
+  const [createRetry, setCreateRetry] = useState(0);
 
   useEffect(() => {
     dataRef.current = data;
   }, [data]);
 
   const loadDraft = useCallback(async () => {
-    if (!user || !id) return;
+    if (!user || !id || id === "new") return;
 
     try {
       const loadedDraft = await getDraft(user.uid, id);
       setDraft(loadedDraft);
       const loadedTitle = loadedDraft?.title ?? "";
-      const loadedData = loadedDraft?.data ?? {};
+      const loadedData = loadedDraft?.data ?? emptyResumeData;
       titleRef.current = loadedTitle;
       dataRef.current = loadedData;
       savedContentRef.current = JSON.stringify({
@@ -115,11 +86,34 @@ export default function ResumeDetailPage() {
   }, [id, user]);
 
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading || !user || id === "new") return;
 
     const timeout = window.setTimeout(() => void loadDraft(), 0);
     return () => window.clearTimeout(timeout);
-  }, [authLoading, loadDraft, user]);
+  }, [authLoading, id, loadDraft, user]);
+
+  useEffect(() => {
+    if (id !== "new" || authLoading || !user || creatingDraftRef.current) return;
+
+    creatingDraftRef.current = true;
+    const requestedTemplate = new URLSearchParams(window.location.search).get("template");
+    const template = getTemplate(requestedTemplate ?? "modern") ?? getTemplate("modern");
+    const templateId = template?.id ?? "modern";
+    const templateName = template?.name ?? "Modern";
+
+    void createDraft(user.uid, {
+      title: `${templateName} Resume`,
+      templateId,
+      data: emptyResumeData,
+    })
+      .then((draftId) => router.replace(`/resume/${draftId}`))
+      .catch((error: unknown) => {
+        console.error("Failed to create resume draft:", error);
+        setLoadError("Couldn't create this resume. Please try again.");
+        setLoading(false);
+        creatingDraftRef.current = false;
+      });
+  }, [authLoading, createRetry, id, router, user]);
 
   const saveChanges = useCallback(async () => {
     if (!user || savedContentRef.current === null) return;
@@ -213,7 +207,12 @@ export default function ResumeDetailPage() {
           onClick={() => {
             setLoading(true);
             setLoadError(null);
-            void loadDraft();
+            if (id === "new") {
+              creatingDraftRef.current = false;
+              setCreateRetry((retry) => retry + 1);
+            } else {
+              void loadDraft();
+            }
           }}
         >
           Retry
@@ -223,7 +222,18 @@ export default function ResumeDetailPage() {
     );
   }
 
-  if (!user || !draft) {
+  if (!user) {
+    return (
+      <main className={styles.messageView}>
+        <h1>Sign in to create and view resumes</h1>
+        <Link href="/login">Sign in</Link>
+      </main>
+    );
+  }
+
+  if (!draft) {
+    if (id === "new") return <LoadingSkeleton />;
+
     return (
       <main className={styles.messageView}>
         <h1>Resume not found</h1>
@@ -231,6 +241,8 @@ export default function ResumeDetailPage() {
       </main>
     );
   }
+
+  const TemplateComponent = getTemplate(draft.templateId)?.Component;
 
   return (
     <main className={styles.resumeView}>
@@ -262,7 +274,11 @@ export default function ResumeDetailPage() {
           </span>
         </header>
         <div className={styles.paperScroller}>
-          <ResumePaper data={data} title={title} templateId={draft.templateId} />
+          {TemplateComponent ? (
+            <TemplateComponent data={data} editable onChange={setData} />
+          ) : (
+            <p role="alert">This resume uses an unsupported template.</p>
+          )}
         </div>
       </section>
       <aside className={styles.sidebar} aria-label="Resume analysis">

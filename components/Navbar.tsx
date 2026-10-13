@@ -6,7 +6,7 @@ export default function Navbar() {
       <Link href="/">Home</Link>
       <Link href="/login">Login</Link>
       <Link href="/dashboard">Dashboard</Link>
-      <Link href="/resume/demo">Resume Detail</Link>
+      <Link href="/resume/new?template=modern">New Resume</Link>
       <Link href="/templates">Templates</Link>
       <Link href="/about">About</Link>
     </nav>
