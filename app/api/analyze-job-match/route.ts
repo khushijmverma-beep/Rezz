@@ -4,12 +4,8 @@ import type {
     SkillGap,
     SuggestedRewording,
 } from "@/lib/types/job-match";
-
-const PRIMARY_GEMINI_MODEL = "gemini-3.6-flash";
-const FALLBACK_GEMINI_MODEL = "gemini-3.5-flash";
-const TOTAL_BUDGET_MS = 20_000;
-const FALLBACK_RESERVE_MS = 7_000;
-const BACKOFFS_MS = [1000, 2000, 4000];
+import { callLLM } from "@/lib/llm";
+import { GeminiError } from "@/lib/gemini";
 
 type GeminiJobMatch = Omit<JobMatchResult, "overallFit"> & {
     overallFit: { matchScore: number; summary: string };
@@ -95,21 +91,6 @@ function toRating(matchScore: number): "strong" | "medium" | "weak" {
     return "weak";
 }
 
-function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function remainingMs(deadline: number): number {
-    return Math.max(0, deadline - Date.now());
-}
-
-function logGeminiNonOkResponse(model: string, status: number, body: unknown): void {
-    console.error(
-        `Gemini non-OK response from ${model} (status ${status}):`,
-        body
-    );
-}
-
 function buildPrompt(resumeText: string, jobDescription: string): string {
     return `You are an expert technical resume reviewer. Compare the resume between the
 <resume> tags to the job description between the <job_description> tags.
@@ -179,113 +160,19 @@ ${jobDescription}
 </job_description>`;
 }
 
-type GeminiAttemptResult =
-    | { kind: "success"; model: string; data: any }
-    | { kind: "http_error"; model: string; status: number; data: any }
-    | { kind: "unreachable" }
-    | { kind: "invalid_response"; status: number }
-    | { kind: "budget_exhausted"; model: string; status?: number; data?: any };
-
-async function callGeminiWithRetries(
-    model: string,
-    apiKey: string,
-    prompt: string,
-    deadline: number,
-    maxRetries: number
-): Promise<GeminiAttemptResult> {
-    const requestInit: RequestInit = {
-        method: "POST",
-        headers: {
-            "x-goog-api-key": apiKey,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-                responseMimeType: "application/json",
-                temperature: 0.2,
-            },
-        }),
-    };
-
-    let lastStatus: number | undefined;
-    let lastData: any;
-
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        const budget = remainingMs(deadline);
-        if (budget <= 0) {
-            return {
-                kind: "budget_exhausted",
-                model,
-                status: lastStatus,
-                data: lastData,
-            };
-        }
-
-        let res: Response;
-        try {
-            res = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-                {
-                    ...requestInit,
-                    signal: AbortSignal.timeout(budget),
-                }
-            );
-        } catch (err) {
-            console.error(err);
-            if (remainingMs(deadline) <= 0) {
-                return {
-                    kind: "budget_exhausted",
-                    model,
-                    status: lastStatus,
-                    data: lastData,
-                };
-            }
-            return { kind: "unreachable" };
-        }
-
-        let data: any;
-        try {
-            data = await res.json();
-        } catch {
-            console.error("Gemini returned a non-JSON response, status:", res.status);
-            return { kind: "invalid_response", status: res.status };
-        }
-
-        lastStatus = res.status;
-        lastData = data;
-
-        const temporary = res.status === 503 || res.status === 429;
-        if (temporary && attempt < maxRetries) {
-            logGeminiNonOkResponse(model, res.status, data);
-            const wait = Math.min(BACKOFFS_MS[attempt] ?? 0, remainingMs(deadline));
-            if (wait <= 0) {
-                return {
-                    kind: "budget_exhausted",
-                    model,
-                    status: res.status,
-                    data,
-                };
-            }
-            await sleep(wait);
-            continue;
-        }
-
-        if (!res.ok) {
-            logGeminiNonOkResponse(model, res.status, data);
-            return { kind: "http_error", model, status: res.status, data };
-        }
-
-        return { kind: "success", model, data };
+function responseForLLMError(err: GeminiError): Response {
+    if (err.message === "Could not reach Gemini") {
+        return Response.json({ error: "Could not reach gemini" }, { status: 502 });
     }
-
-    return {
-        kind: "budget_exhausted",
-        model,
-        status: lastStatus,
-        data: lastData,
-    };
+    if (err.message === "Gemini returned a non-JSON response") {
+        return Response.json({ error: "Gemini returned an invalid response" }, { status: 502 });
+    }
+    if (err.message === "Gemini returned no text") {
+        return Response.json({ error: "Gemini returned no text" }, { status: 502 });
+    }
+    return Response.json({ error: "Gemini call failed" }, { status: err.status });
 }
+
 
 export async function POST(req: Request) {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -308,75 +195,16 @@ export async function POST(req: Request) {
     }
 
     const prompt = buildPrompt(body.resumeText, body.jobDescription);
-    const deadline = Date.now() + TOTAL_BUDGET_MS;
-    const primaryDeadline = Math.min(deadline, Date.now() + (TOTAL_BUDGET_MS - FALLBACK_RESERVE_MS));
 
-    let outcome = await callGeminiWithRetries(
-        PRIMARY_GEMINI_MODEL,
-        apiKey,
-        prompt,
-        primaryDeadline,
-        BACKOFFS_MS.length
-    );
-
-    const primaryUnavailable =
-        (outcome.kind === "http_error" || outcome.kind === "budget_exhausted") &&
-        (outcome.status === 503 || outcome.status === 429);
-
-    if (primaryUnavailable && remainingMs(deadline) > 0) {
-        console.error(
-            `Primary model ${PRIMARY_GEMINI_MODEL} unavailable; trying fallback ${FALLBACK_GEMINI_MODEL}`
-        );
-        outcome = await callGeminiWithRetries(
-            FALLBACK_GEMINI_MODEL,
-            apiKey,
-            prompt,
-            deadline,
-            0
-        );
-    }
-
-    if (outcome.kind === "unreachable") {
-        return Response.json({ error: "Could not reach gemini" }, { status: 502 });
-    }
-
-    if (outcome.kind === "invalid_response") {
-        return Response.json(
-            { error: "Gemini returned an invalid response" },
-            { status: 502 }
-        );
-    }
-
-    if (outcome.kind === "budget_exhausted") {
-        if (outcome.status !== undefined) {
-            logGeminiNonOkResponse(outcome.model, outcome.status, outcome.data);
-        } else {
-            console.error(outcome.data ?? "Gemini budget exhausted");
+    let text: string;
+    try {
+        text = await callLLM(prompt);
+    } catch (err) {
+        if (err instanceof GeminiError) {
+            return responseForLLMError(err);
         }
-        return Response.json(
-            { error: "Gemini call failed" },
-            { status: outcome.status ?? 503 }
-        );
-    }
-
-    if (outcome.kind === "http_error") {
-        // Already logged in callGeminiWithRetries when the non-OK response arrived.
-        return Response.json(
-            { error: "Gemini call failed" },
-            { status: outcome.status }
-        );
-    }
-
-    const { model, data } = outcome;
-    console.log(`analyze-job-match answered by model: ${model}`);
-
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (typeof text !== "string") {
-        console.error(data);
-        return Response.json(
-            { error: "Gemini returned no text" },
-            { status: 502 }
-        );
+        console.error(err);
+        return Response.json({ error: "Gemini call failed" }, { status: 500 });
     }
 
     const parsed = parseGeminiJobMatch(text);

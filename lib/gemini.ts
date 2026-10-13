@@ -6,11 +6,13 @@ const BACKOFFS_MS = [1000, 2000, 4000];
 
 export class GeminiError extends Error {
     status: number;
+    fallback: boolean;
 
-    constructor(status: number, message: string) {
+    constructor(status: number, message: string, fallback = false) {
         super(message);
         this.name = "GeminiError";
         this.status = status;
+        this.fallback = fallback;
     }
 }
 
@@ -23,8 +25,8 @@ function remainingMs(deadline: number): number {
     return Math.max(0, deadline - Date.now());
 }
 
-function logGeminiNonOkResponse(model: string, status: number, body: unknown): void {
-    console.error(`Gemini non-OK response from ${model} (status ${status}):`, body);
+function logGeminiNonOkResponse(model: string, status: number): void {
+    console.error(`LLM non-OK response provider=gemini model=${model} status=${status}`);
 }
 
 type GeminiAttemptResult =
@@ -83,7 +85,7 @@ async function callGeminiWithRetries(
         try {
             data = await res.json();
         } catch {
-            console.error("Gemini returned a non-JSON response, status:", res.status);
+            console.error(`LLM non-OK response provider=gemini model=${model} status=${res.status}`);
             return { kind: "invalid_response", status: res.status };
         }
 
@@ -92,7 +94,7 @@ async function callGeminiWithRetries(
 
         const temporary = res.status === 503 || res.status === 429;
         if (temporary && attempt < maxRetries) {
-            logGeminiNonOkResponse(model, res.status, data);
+            logGeminiNonOkResponse(model, res.status);
             const wait = Math.min(BACKOFFS_MS[attempt] ?? 0, remainingMs(deadline));
             if (wait <= 0) {
                 return { kind: "budget_exhausted", model, status: res.status, data };
@@ -102,7 +104,7 @@ async function callGeminiWithRetries(
         }
 
         if (!res.ok) {
-            logGeminiNonOkResponse(model, res.status, data);
+            logGeminiNonOkResponse(model, res.status);
             return { kind: "http_error", model, status: res.status, data };
         }
 
@@ -113,14 +115,16 @@ async function callGeminiWithRetries(
 }
 
 
-export async function callGemini(prompt: string): Promise<string> {
+export async function callGemini(
+    prompt: string,
+    deadline = Date.now() + TOTAL_BUDGET_MS
+): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
         throw new Error("Server is missing GEMINI_API_KEY");
     }
 
-    const deadline = Date.now() + TOTAL_BUDGET_MS;
-    const primaryDeadline = Date.now() + (TOTAL_BUDGET_MS - FALLBACK_RESERVE_MS);
+    const primaryDeadline = Math.min(deadline, Date.now() + (TOTAL_BUDGET_MS - FALLBACK_RESERVE_MS));
 
     let outcome = await callGeminiWithRetries(
         PRIMARY_GEMINI_MODEL,
@@ -143,21 +147,27 @@ export async function callGemini(prompt: string): Promise<string> {
 
     switch (outcome.kind) {
         case "unreachable":
-            throw new GeminiError(502, "Could not reach Gemini");
+            throw new GeminiError(502, "Could not reach Gemini", true);
         case "invalid_response":
             throw new GeminiError(502, "Gemini returned a non-JSON response");
-        case "budget_exhausted":
-            console.error(`Gemini budget exhausted on ${outcome.model}, last status:`, outcome.status);
-            throw new GeminiError(outcome.status ?? 503, "Gemini timed out");
+        case "budget_exhausted": {
+            const status = outcome.status ?? 503;
+            console.error(`LLM non-OK response provider=gemini model=${outcome.model} status=${status}`);
+            throw new GeminiError(status, "Gemini timed out", status === 429 || status === 503);
+        }
         case "http_error":
-            throw new GeminiError(outcome.status, "Gemini call failed");
+            throw new GeminiError(
+                outcome.status,
+                "Gemini call failed",
+                outcome.status === 429 || outcome.status === 503
+            );
     }
 
     console.log(`Gemini answered by model: ${outcome.model}`);
 
     const text = outcome.data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (typeof text !== "string") {
-        console.error(outcome.data);
+        console.error(`LLM non-OK response provider=gemini model=${outcome.model} status=502`);
         throw new GeminiError(502, "Gemini returned no text");
     }
 

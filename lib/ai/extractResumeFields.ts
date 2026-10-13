@@ -4,7 +4,8 @@ import type {
     EducationItem,
     ProjectItem,
 } from "@/lib/types/resume";
-import { callGemini, GeminiError } from "../gemini";
+import { GeminiError } from "../gemini";
+import { callLLM } from "../llm";
 
 // Mock data: used when AI_MOCK = true
 export const MOCK_RESUME_FIELDS: Partial<ResumeData> = {
@@ -186,7 +187,7 @@ function cleanItems(
 export async function extractResumeFields(
     text: string
 ): Promise<Partial<ResumeData> | null> {
-    const reply = await callGemini(buildPrompt(text));
+    const reply = await callLLM(buildPrompt(text));
 
     const parsed = parseJson(reply);
     if (!parsed) {
