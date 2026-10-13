@@ -67,21 +67,16 @@ export default function ResumeDetailsPage() {
 
   // used by both the chat and the upload: merge into the form, nothing is saved yet
   const handleFill = (fields: unknown) => {
-    //  console.log("handleFill called with:", fields);
-    const handleFill = (fields: unknown) => {
-      const base = editing ? form : details;
-      const merged = mergeDetails(base, fields);
-      console.log("fields in:", fields);
-      console.log("merged out:", merged);
-      const changed = JSON.stringify(merged) !== JSON.stringify(base);
-      setForm(merged);
-      setEditing(true);
-      setBanner(
-        changed
-          ? "Review the filled fields, then Save."
-          : "Nothing new was found in that file.",
-      );
-    };
+    const base = editing ? form : details;
+    const merged = mergeDetails(base, fields);
+    const changed = JSON.stringify(merged) !== JSON.stringify(base);
+    setForm(merged);
+    setEditing(true);
+    setBanner(
+      changed
+        ? "Review the filled fields, then Save."
+        : "Nothing new was found in that file.",
+    );
   };
 
   const handleUpload = async (file: File) => {

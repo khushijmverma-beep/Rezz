@@ -24,37 +24,25 @@ export default function ResumeDetailsView({
   data: ResumeData;
   onEdit: () => void;
 }) {
-  const contact = [data.email, data.phone, data.location].filter(Boolean);
+  const name = [data.firstName, data.lastName].filter(Boolean).join(" ");
+  const contact = [data.email, data.phone, data.location, data.linkedin, data.github, data.website].filter(Boolean);
+  const range = (startDate: string, endDate: string) =>
+    startDate && endDate ? `${startDate} - ${endDate}` : startDate || endDate;
 
   return (
     <div className="space-y-3">
       <section className={headerCard}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-4">
-            <Avatar name={data.fullName} size={72} />
+            <Avatar name={name} size={72} />
             <div className="min-w-0">
-              <h1 className="wrap-break-word text-2xl font-semibold leading-snug">{data.fullName || "Your name"}</h1>
+              <h1 className="wrap-break-word text-2xl font-semibold leading-snug">{name || "Your name"}</h1>
               {contact.length > 0 ? (
                 <div className="mt-1 flex flex-wrap gap-x-3 text-sm text-gray-600">
                   {contact.map((c) => <span key={c}>{c}</span>)}
                 </div>
               ) : (
                 <p className="mt-1 text-sm text-gray-400">No contact details yet</p>
-              )}
-              {data.links.length > 0 && (
-                <div className="mt-1 flex flex-wrap gap-x-3 text-sm">
-                  {data.links.map((l) => (
-                    <a
-                      key={l}
-                      href={/^https?:\/\//.test(l) ? l : `https://${l}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="truncate text-blue-600 hover:underline"
-                    >
-                      {l}
-                    </a>
-                  ))}
-                </div>
               )}
             </div>
           </div>
@@ -78,7 +66,8 @@ export default function ResumeDetailsView({
               <div key={i}>
                 <p className="font-semibold">{e.title}</p>
                 <p className="text-sm text-gray-700">{e.company}</p>
-                {e.dates && <p className="text-xs text-gray-500">{e.dates}</p>}
+                {e.location && <p className="text-sm text-gray-700">{e.location}</p>}
+                {range(e.startDate, e.endDate) && <p className="text-xs text-gray-500">{range(e.startDate, e.endDate)}</p>}
                 {e.bullets.length > 0 && (
                   <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-gray-700">
                     {e.bullets.map((b, j) => <li key={j}>{b}</li>)}
@@ -96,8 +85,9 @@ export default function ResumeDetailsView({
             {data.education.map((e, i) => (
               <div key={i}>
                 <p className="font-semibold">{e.school}</p>
-                <p className="text-sm text-gray-700">{e.degree}</p>
-                {e.dates && <p className="text-xs text-gray-500">{e.dates}</p>}
+                <p className="text-sm text-gray-700">{e.field ? `${e.degree} in ${e.field}` : e.degree}</p>
+                {range(e.startDate, e.endDate) && <p className="text-xs text-gray-500">{range(e.startDate, e.endDate)}</p>}
+                {e.gpa && <p className="text-xs text-gray-500">GPA: {e.gpa}</p>}
               </div>
             ))}
           </div>

@@ -1,37 +1,15 @@
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { app } from "@/lib/firebase";
+import {
+  emptyResumeData,
+  type EducationItem,
+  type ExperienceItem,
+  type ProjectItem,
+  type ResumeData,
+} from "@/lib/types/resume";
 
-export type Experience = { company: string; title: string; dates: string; bullets: string[] };
-export type Education = { school: string; degree: string; dates: string };
-export type Project = { name: string; link: string; description: string };
-
-export type ResumeData = {
-  fullName: string;
-  email: string;
-  phone: string;
-  location: string;
-  links: string[];
-  summary: string;
-  experience: Experience[];
-  education: Education[];
-  skills: string[];
-  projects: Project[];
-  awards: string[];
-};
-
-export const emptyDetails: ResumeData = {
-  fullName: "",
-  email: "",
-  phone: "",
-  location: "",
-  links: [],
-  summary: "",
-  experience: [],
-  education: [],
-  skills: [],
-  projects: [],
-  awards: [],
-};
+export type { ResumeData, ExperienceItem, EducationItem, ProjectItem };
+export const emptyDetails: ResumeData = emptyResumeData;
 
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 const strList = (v: unknown) =>
@@ -39,25 +17,55 @@ const strList = (v: unknown) =>
 const objList = (v: unknown) =>
   Array.isArray(v) ? v.filter((x): x is Record<string, unknown> => !!x && typeof x === "object") : [];
 
-// turns anything (Firestore doc, AI output) into a clean ResumeData
-// also accepts a few alternate names so the AI route and this page don't have to match exactly
+function splitName(first: unknown, last: unknown, full: unknown) {
+  const firstName = str(first);
+  const lastName = str(last);
+  if (firstName || lastName) return { firstName, lastName };
+  const combined = str(full);
+  const space = combined.indexOf(" ");
+  if (space === -1) return { firstName: combined, lastName: "" };
+  return { firstName: combined.slice(0, space), lastName: combined.slice(space + 1).trim() };
+}
+
+function splitDates(start: unknown, end: unknown, dates: unknown) {
+  const startDate = str(start);
+  const endDate = str(end);
+  if (startDate || endDate) return { startDate, endDate };
+  const combined = str(dates);
+  const parts = combined.split(/\s*[–—-]\s*/).filter(Boolean);
+  if (parts.length >= 2) return { startDate: parts[0], endDate: parts.slice(1).join(" - ") };
+  return { startDate: combined, endDate: "" };
+}
+
+function pickLinks(raw: Record<string, unknown>) {
+  let linkedin = str(raw.linkedin);
+  let github = str(raw.github);
+  let website = str(raw.website || raw.url);
+  for (const link of strList(raw.links)) {
+    const lower = link.toLowerCase();
+    if (!linkedin && lower.includes("linkedin")) linkedin = link;
+    else if (!github && (lower.includes("github.com") || lower.includes("github"))) github = link;
+    else if (!website) website = link;
+  }
+  return { linkedin, github, website };
+}
+
 export function normalizeDetails(raw: unknown): ResumeData {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-
-  const links = strList(r.links);
-  if (!links.length && str(r.linkedin)) links.push(str(r.linkedin));
+  const name = splitName(r.firstName, r.lastName, r.fullName ?? r.name);
 
   return {
-    fullName: str(r.fullName ?? r.name),
+    ...name,
     email: str(r.email),
     phone: str(r.phone),
     location: str(r.location),
-    links,
+    ...pickLinks(r),
     summary: str(r.summary ?? r.about),
     experience: objList(r.experience).map((e) => ({
       company: str(e.company),
       title: str(e.title),
-      dates: str(e.dates),
+      location: str(e.location),
+      ...splitDates(e.startDate, e.endDate, e.dates),
       bullets: Array.isArray(e.bullets)
         ? strList(e.bullets)
         : str(e.description).split("\n").map((l) => l.replace(/^[-•*]\s*/, "").trim()).filter(Boolean),
@@ -65,12 +73,14 @@ export function normalizeDetails(raw: unknown): ResumeData {
     education: objList(r.education).map((e) => ({
       school: str(e.school),
       degree: str(e.degree),
-      dates: str(e.dates),
+      field: str(e.field),
+      ...splitDates(e.startDate, e.endDate, e.dates),
+      gpa: str(e.gpa),
     })),
     skills: strList(r.skills),
     projects: objList(r.projects).map((p) => ({
       name: str(p.name),
-      link: str(p.link),
+      link: str(p.link || p.url),
       description: str(p.description),
     })),
     awards: strList(r.awards).length
@@ -95,12 +105,15 @@ function appendNew<T>(base: T[], incoming: T[]): T[] {
 export function mergeDetails(current: ResumeData, incomingRaw: unknown): ResumeData {
   const inc = normalizeDetails(incomingRaw);
   return {
-    fullName: current.fullName || inc.fullName,
+    firstName: current.firstName || inc.firstName,
+    lastName: current.lastName || inc.lastName,
     email: current.email || inc.email,
     phone: current.phone || inc.phone,
     location: current.location || inc.location,
+    linkedin: current.linkedin || inc.linkedin,
+    github: current.github || inc.github,
+    website: current.website || inc.website,
     summary: current.summary || inc.summary,
-    links: appendNew(current.links, inc.links),
     experience: appendNew(current.experience, inc.experience),
     education: appendNew(current.education, inc.education),
     skills: appendNew(current.skills, inc.skills),
@@ -112,7 +125,6 @@ export function mergeDetails(current: ResumeData, incomingRaw: unknown): ResumeD
 export function cleanDetails(d: ResumeData): ResumeData {
   return {
     ...d,
-    links: d.links.map((s) => s.trim()).filter(Boolean),
     skills: d.skills.map((s) => s.trim()).filter(Boolean),
     awards: d.awards.map((s) => s.trim()).filter(Boolean),
     experience: d.experience
@@ -137,6 +149,10 @@ export async function saveResumeDetails(uid: string, data: ResumeData): Promise<
   await setDoc(
     doc(db, "users", uid),
     { defaultDetails: data, detailsUpdatedAt: serverTimestamp() },
-    { merge: true }
+    { merge: true },
   );
 }
+
+export type Experience = ExperienceItem;
+export type Education = EducationItem;
+export type Project = ProjectItem;

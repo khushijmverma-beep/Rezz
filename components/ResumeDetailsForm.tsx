@@ -117,13 +117,15 @@ export default function ResumeDetailsForm({
       {/* Contact */}
       <section className={`${card} space-y-2`}>
         <h2 className="text-lg font-semibold">Contact</h2>
-        <input value={value.fullName} onChange={(e) => set("fullName", e.target.value)} placeholder="Full name" className={input} />
+        <input value={value.firstName} onChange={(e) => set("firstName", e.target.value)} placeholder="First name" className={input} />
+        <input value={value.lastName} onChange={(e) => set("lastName", e.target.value)} placeholder="Last name" className={input} />
         <input type="email" value={value.email} onChange={(e) => set("email", e.target.value)} placeholder="Email" className={input} />
         <input type="tel" value={value.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Phone" className={input} />
         <input value={value.location} onChange={(e) => set("location", e.target.value)} placeholder="Location" className={input} />
+        <input value={value.linkedin} onChange={(e) => set("linkedin", e.target.value)} placeholder="LinkedIn" className={input} />
+        <input value={value.github} onChange={(e) => set("github", e.target.value)} placeholder="GitHub" className={input} />
+        <input value={value.website} onChange={(e) => set("website", e.target.value)} placeholder="Website" className={input} />
       </section>
-
-      <ChipInput title="Links" placeholder="Add a link (LinkedIn, GitHub…) and press Enter" items={value.links} onChange={(v) => set("links", v)} />
 
       <section className={card}>
         <h2 className="mb-2 text-lg font-semibold">About</h2>
@@ -140,7 +142,9 @@ export default function ResumeDetailsForm({
               <div key={i} className="space-y-2 rounded border border-gray-200 p-3">
                 <input value={exp.title} onChange={(e) => patch({ title: e.target.value })} placeholder="Job title" className={input} />
                 <input value={exp.company} onChange={(e) => patch({ company: e.target.value })} placeholder="Company" className={input} />
-                <input value={exp.dates} onChange={(e) => patch({ dates: e.target.value })} placeholder="Dates (e.g. Jun 2023 – Aug 2024)" className={input} />
+                <input value={exp.location} onChange={(e) => patch({ location: e.target.value })} placeholder="Location" className={input} />
+                <input value={exp.startDate} onChange={(e) => patch({ startDate: e.target.value })} placeholder="Start date" className={input} />
+                <input value={exp.endDate} onChange={(e) => patch({ endDate: e.target.value })} placeholder="End date" className={input} />
                 <div className="space-y-2">
                   {exp.bullets.map((b, j) => (
                     <div key={j} className="flex gap-2">
@@ -160,7 +164,7 @@ export default function ResumeDetailsForm({
             );
           })}
         </div>
-        <button onClick={() => set("experience", [...value.experience, { company: "", title: "", dates: "", bullets: [] }])} className={addBtn}>+ Add experience</button>
+        <button onClick={() => set("experience", [...value.experience, { company: "", title: "", location: "", startDate: "", endDate: "", bullets: [] }])} className={addBtn}>+ Add experience</button>
       </section>
 
       {/* Education */}
@@ -173,13 +177,16 @@ export default function ResumeDetailsForm({
               <div key={i} className="space-y-2 rounded border border-gray-200 p-3">
                 <input value={edu.school} onChange={(e) => patch({ school: e.target.value })} placeholder="School" className={input} />
                 <input value={edu.degree} onChange={(e) => patch({ degree: e.target.value })} placeholder="Degree" className={input} />
-                <input value={edu.dates} onChange={(e) => patch({ dates: e.target.value })} placeholder="Dates" className={input} />
+                <input value={edu.field} onChange={(e) => patch({ field: e.target.value })} placeholder="Field of study" className={input} />
+                <input value={edu.startDate} onChange={(e) => patch({ startDate: e.target.value })} placeholder="Start date" className={input} />
+                <input value={edu.endDate} onChange={(e) => patch({ endDate: e.target.value })} placeholder="End date" className={input} />
+                <input value={edu.gpa} onChange={(e) => patch({ gpa: e.target.value })} placeholder="GPA" className={input} />
                 <button onClick={() => set("education", value.education.filter((_, k) => k !== i))} className={removeBtn}>Remove</button>
               </div>
             );
           })}
         </div>
-        <button onClick={() => set("education", [...value.education, { school: "", degree: "", dates: "" }])} className={addBtn}>+ Add education</button>
+        <button onClick={() => set("education", [...value.education, { school: "", degree: "", field: "", startDate: "", endDate: "", gpa: "" }])} className={addBtn}>+ Add education</button>
       </section>
 
       <ChipInput title="Skills" placeholder="Add a skill and press Enter" items={value.skills} onChange={(v) => set("skills", v)} />
