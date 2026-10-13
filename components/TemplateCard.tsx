@@ -1,36 +1,45 @@
-import Link from "next/link";
+
+"use client";
+
+import Image from "next/image";
 
 type TemplateCardProps = {
   name: string;
-  thumbnail: string;
   templateId: string;
+  onClick: () => void;
 };
 
 export default function TemplateCard({
   name,
-  thumbnail,
   templateId,
+  onClick,
 }: TemplateCardProps) {
   return (
-    <Link
-      href={`/resume/new?template=${templateId}`}
-      className="group block"
+    <button
+      type="button"
+      onClick={onClick}
+      className="group w-40 shrink-0 text-left"
     >
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-        <div className="flex h-48 items-center justify-center bg-gray-100">
-          <span className="text-sm text-gray-500">{thumbnail}</span>
-        </div>
-
-        <div className="p-5">
-          <h3 className="text-lg font-semibold text-black group-hover:underline">
-            {name}
-          </h3>
-
-          <p className="mt-1 text-sm text-gray-500">
-            Choose this template
-          </p>
-        </div>
+      <div className="relative flex aspect-[8.5/11] items-center justify-center overflow-hidden rounded-md border border-gray-200 bg-gray-100 transition group-hover:border-gray-400 group-hover:shadow-md">
+        {templateId === "blank" ? (
+          <span className="text-5xl font-light text-gray-400">+</span>
+        ) : (
+          <Image
+            src={`/templates/${templateId}.png`}
+            alt={`${name} resume template preview`}
+            fill
+            sizes="160px"
+            className="object-cover"
+            onError={(event) => {
+              event.currentTarget.style.display = "none";
+            }}
+          />
+        )}
       </div>
-    </Link>
+
+      <p className="mt-2 text-sm font-medium text-gray-800 group-hover:text-black">
+        {name}
+      </p>
+    </button>
   );
 }
