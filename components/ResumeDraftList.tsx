@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ResumeCard from "@/components/ResumeCard";
-import { listDrafts, type Draft } from "@/lib/drafts";
+import { deleteDraft, listDrafts, type Draft } from "@/lib/drafts";
 import { useAuth } from "@/lib/useAuth";
 
 export default function ResumeDraftList() {
@@ -73,6 +73,34 @@ export default function ResumeDraftList() {
           name={draft.title}
           updatedAt={new Date(draft.updatedAt).toLocaleDateString()}
           resumeId={draft.id}
+          templateId={draft.templateId}
+          onDelete={(resumeId) => {
+            const confirmed = window.confirm(
+              "Are you sure you want to delete this resume? This action cannot be undone."
+            );
+
+            if (!confirmed) return;
+
+            void deleteDraft(user.uid, resumeId)
+              .then(() => {
+                setResult((current) =>
+                  current?.drafts
+                    ? {
+                        ...current,
+                        drafts: current.drafts.filter((item) => item.id !== resumeId),
+                      }
+                    : current
+                );
+              })
+              .catch((deleteError: unknown) => {
+                console.error("Could not delete resume:", deleteError);
+                setResult((current) =>
+                  current
+                    ? { ...current, error: "Could not delete this resume. Please try again." }
+                    : current
+                );
+              });
+          }}
         />
       ))}
     </div>
