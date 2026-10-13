@@ -1,6 +1,6 @@
 "use client";
 
-import type { TemplateProps } from "@/lib/types/resume";
+import type { TemplateProps } from "./types";
 import ResumeLayout from "./ResumeLayout";
 
 export default function TemplateSimple(props: TemplateProps) {

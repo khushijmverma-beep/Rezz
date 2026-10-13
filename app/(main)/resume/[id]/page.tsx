@@ -7,26 +7,12 @@ import AnalyzePanel from "@/components/AnalyzePanel";
 import { createDraft, getDraft, updateDraft, type Draft } from "@/lib/drafts";
 import { resumeToText } from "@/lib/resumeToText";
 import { getTemplate } from "@/lib/templates";
-import type { ResumeData } from "@/lib/types/resume";
+import { emptyResumeData, type ResumeData } from "@/lib/types/resume";
 import { useAuth } from "@/lib/useAuth";
 import styles from "./page.module.css";
 
 type SaveStatus = "saving" | "saved" | "retrying";
 type DraftContent = { title: string; data: ResumeData };
-
-const emptyResumeData: ResumeData = {
-  name: "",
-  email: "",
-  phone: "",
-  location: "",
-  website: "",
-  summary: "",
-  experience: [],
-  education: [],
-  skills: [],
-  projects: [],
-  awards: [],
-};
 
 function LoadingSkeleton() {
   return (

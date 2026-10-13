@@ -1,42 +1,59 @@
 export type TemplateId = "blank" | "modern" | "professional" | "simple";
 
-export interface Experience {
-  id: string;
-  title: string;
+export type ExperienceItem = {
   company: string;
+  title: string;
   location: string;
-  dates: string;
+  startDate: string;
+  endDate: string;
   bullets: string[];
-}
-export interface Education {
-  id: string;
+};
+
+export type EducationItem = {
   school: string;
   degree: string;
-  dates: string;
-  details: string;
-}
-export interface Project {
-  id: string;
+  field: string;
+  startDate: string;
+  endDate: string;
+  gpa: string;
+};
+
+export type ProjectItem = {
   name: string;
-  url: string;
+  link: string;
   description: string;
-}
-/** Presentation data only; account and persistence metadata belong to the caller. */
-export interface ResumeData extends Record<string, unknown> {
-  name: string;
+};
+
+export type ResumeData = {
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   location: string;
+  linkedin: string;
+  github: string;
   website: string;
   summary: string;
-  experience: Experience[];
-  education: Education[];
+  experience: ExperienceItem[];
+  education: EducationItem[];
   skills: string[];
-  projects: Project[];
+  projects: ProjectItem[];
   awards: string[];
-}
-export interface TemplateProps {
-  data: ResumeData;
-  editable?: boolean;
-  onChange?: (data: ResumeData) => void;
-}
+};
+
+export const emptyResumeData: ResumeData = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  location: "",
+  linkedin: "",
+  github: "",
+  website: "",
+  summary: "",
+  experience: [],
+  education: [],
+  skills: [],
+  projects: [],
+  awards: [],
+};

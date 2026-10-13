@@ -1,93 +1,81 @@
 import type { ResumeData } from "@/lib/types/resume";
 
-const contactFields = [
-  ["email", "Email"],
-  ["phone", "Phone"],
-  ["location", "Location"],
-  ["linkedin", "LinkedIn"],
-] as const;
-
-const sectionOrder = ["experience", "education", "skills"];
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+function linesFor(value: string): string[] {
+  return value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
 }
 
-function labelFor(key: string): string {
-  return key
-    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-    .replace(/[_-]+/g, " ")
-    .replace(/\b\w/g, (character) => character.toUpperCase());
-}
-
-function valueToLines(value: unknown, splitCommas = false): string[] {
-  if (typeof value === "string") {
-    const lines = value
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean);
-
-    return splitCommas
-      ? lines.flatMap((line) => line.split(",").map((part) => part.trim()).filter(Boolean))
-      : lines;
-  }
-
-  if (typeof value === "number") {
-    return [String(value)];
-  }
-
-  if (Array.isArray(value)) {
-    return value.flatMap((item) => valueToLines(item));
-  }
-
-  if (isRecord(value)) {
-    return Object.entries(value).flatMap(([key, item]) => {
-      const lines = valueToLines(item);
-      return lines.map((line) => `${labelFor(key)}: ${line}`);
-    });
-  }
-
-  return [];
+function pushSection(lines: string[], title: string, bullets: string[]) {
+  if (bullets.length === 0) return;
+  lines.push("", title, ...bullets.map((bullet) => `- ${bullet}`));
 }
 
 export function resumeToText(data: ResumeData): string {
   const lines: string[] = [];
-  const name = valueToLines(data.name)[0];
+  const name = [data.firstName, data.lastName].filter(Boolean).join(" ").trim();
 
   if (name) {
     lines.push(name);
   }
 
-  for (const [field, label] of contactFields) {
-    const value = valueToLines(data[field]).join(", ");
-    if (value) {
-      lines.push(`${label}: ${value}`);
-    }
+  const contact: Array<[string, string]> = [
+    ["Email", data.email],
+    ["Phone", data.phone],
+    ["Location", data.location],
+    ["LinkedIn", data.linkedin],
+    ["GitHub", data.github],
+    ["Website", data.website],
+  ];
+
+  for (const [label, value] of contact) {
+    const text = value.trim();
+    if (text) lines.push(`${label}: ${text}`);
   }
 
-  const sectionKeys = Object.keys(data).filter(
-    (key) =>
-      key !== "name" &&
-      !contactFields.some(([field]) => field === key) &&
-      data[key] !== undefined &&
-      data[key] !== null,
+  pushSection(lines, "Summary", linesFor(data.summary));
+
+  const experience = data.experience.flatMap((item) => {
+    const heading = [item.title, item.company, item.location].filter(Boolean).join(", ");
+    const dates = [item.startDate, item.endDate].filter(Boolean).join(" - ");
+    return [
+      ...linesFor(heading),
+      ...linesFor(dates),
+      ...item.bullets.flatMap((bullet) => linesFor(bullet)),
+    ];
+  });
+  pushSection(lines, "Experience", experience);
+
+  const education = data.education.flatMap((item) => {
+    const degree = [item.degree, item.field].filter(Boolean).join(" in ");
+    const dates = [item.startDate, item.endDate].filter(Boolean).join(" - ");
+    return [
+      ...linesFor(item.school),
+      ...linesFor(degree),
+      ...linesFor(dates),
+      ...(item.gpa.trim() ? [`GPA: ${item.gpa.trim()}`] : []),
+    ];
+  });
+  pushSection(lines, "Education", education);
+
+  pushSection(
+    lines,
+    "Skills",
+    data.skills.flatMap((skill) => linesFor(skill)),
   );
 
-  sectionKeys.sort((left, right) => {
-    const leftIndex = sectionOrder.indexOf(left.toLowerCase());
-    const rightIndex = sectionOrder.indexOf(right.toLowerCase());
-    return (leftIndex < 0 ? sectionOrder.length : leftIndex) -
-      (rightIndex < 0 ? sectionOrder.length : rightIndex);
-  });
+  const projects = data.projects.flatMap((item) => [
+    ...linesFor([item.name, item.link].filter(Boolean).join(" ")),
+    ...linesFor(item.description),
+  ]);
+  pushSection(lines, "Projects", projects);
 
-  for (const key of sectionKeys) {
-    const bullets = valueToLines(data[key], key.toLowerCase() === "skills");
-    if (bullets.length === 0) {
-      continue;
-    }
-
-    lines.push("", labelFor(key), ...bullets.map((bullet) => `- ${bullet}`));
-  }
+  pushSection(
+    lines,
+    "Awards",
+    data.awards.flatMap((award) => linesFor(award)),
+  );
 
   return lines.join("\n");
 }
