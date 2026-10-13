@@ -10,7 +10,7 @@ import Avatar from "@/components/Avatar";
 
 // change these hrefs if your routes are named differently
 const NAV = [
-  { href: "/dashboard", label: "Home", Icon: Home },
+  { href: "/", label: "Home", Icon: Home },
   { href: "/resume-details", label: "Resume Details", Icon: FileText },
   { href: "/about", label: "About", Icon: Info },
 ];
@@ -29,7 +29,8 @@ export default function Sidebar() {
     router.push("/"); // landing page
   };
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
 
   const tabClass = (href: string) =>
     `flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
