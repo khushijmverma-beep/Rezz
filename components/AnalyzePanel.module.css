@@ -129,7 +129,7 @@
   color: #8a3030;
 }
 
-.fitSummary {
+.scoreCard {
   display: grid;
   gap: 0.45rem;
   padding: 0.75rem;
@@ -138,13 +138,12 @@
   background: #f8fafc;
 }
 
-.fitRating {
+.scoreHeader {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.45rem;
-  margin: 0;
-  font-size: 0.875rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .fitLabel {
@@ -152,8 +151,57 @@
   font-weight: 600;
 }
 
-.fitScore {
+.rating {
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.scoreNumber {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  margin: 0;
+  color: #1d2939;
+  font-size: 2.75rem;
+  font-weight: 750;
+  line-height: 1;
+}
+
+.scoreNumber span {
   color: #687386;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.scoreTrack {
+  height: 0.55rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e5e9ef;
+}
+
+.scoreProgress {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 250ms ease;
+}
+
+.strong {
+  background-color: #16834a;
+  color: #fff;
+}
+
+.medium {
+  background-color: #c47b08;
+  color: #fff;
+}
+
+.weak {
+  background-color: #c0393b;
+  color: #fff;
 }
 
 .fitText {

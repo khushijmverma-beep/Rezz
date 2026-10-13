@@ -1,6 +1,6 @@
 import Link from "next/link";
 import TemplateCard from "@/components/TemplateCard";
-import ResumeCard from "@/components/ResumeCard";
+import ResumeDraftList from "@/components/ResumeDraftList";
 
 export default function Home() {
   return (
@@ -67,25 +67,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <ResumeCard
-            name="Software Engineer Resume"
-            updatedAt="Sep 26, 2026"
-            resumeId="software-engineer"
-          />
-
-          <ResumeCard
-            name="Internship Resume"
-            updatedAt="Sep 20, 2026"
-            resumeId="internship"
-          />
-
-          <ResumeCard
-            name="UTD CS Resume"
-            updatedAt="Sep 15, 2026"
-            resumeId="utd-cs"
-          />
-        </div>
+        <ResumeDraftList />
       </section>
     </main>
   );
