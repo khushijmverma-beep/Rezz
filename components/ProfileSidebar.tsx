@@ -45,7 +45,7 @@ export default function Sidebar() {
             }
 
             setProfile({
-                name: data.name,
+                name: [data.firstName, data.lastName].filter(Boolean).join(" "),
                 email: data.email,
                 phone: data.phone,
                 location: data.location,

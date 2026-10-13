@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
-import type { TemplateId, TemplateProps } from "@/lib/types/resume";
+import type { TemplateProps } from "@/components/templates/types";
+import type { TemplateId } from "@/lib/types/resume";
 import TemplateBlank from "@/components/templates/TemplateBlank";
 import TemplateModern from "@/components/templates/TemplateModern";
 import TemplateProfessional from "@/components/templates/TemplateProfessional";
