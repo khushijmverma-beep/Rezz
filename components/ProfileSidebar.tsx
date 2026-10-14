@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { Home, FileText, Info, LogOut } from "lucide-react";
+import { Home, FileText, Info, LogOut, Activity } from "lucide-react";
 import { app } from "@/lib/firebase";
 import Avatar from "@/components/Avatar";
 
@@ -13,6 +13,7 @@ const NAV = [
   { href: "/", label: "Home", Icon: Home },
   { href: "/resume-details", label: "Resume Details", Icon: FileText },
   { href: "/about", label: "About", Icon: Info },
+  { href: "/activity", label: "Activity", Icon: Activity}
 ];
 
 export default function Sidebar() {
