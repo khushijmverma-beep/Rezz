@@ -6,9 +6,10 @@ import styles from "./AnalyzePanel.module.css";
 
 type AnalyzePanelProps = {
   resumeText: string;
+  onResult?: (result: JobMatchResult) => void;
 };
 
-export default function AnalyzePanel({ resumeText }: AnalyzePanelProps) {
+export default function AnalyzePanel({ resumeText, onResult }: AnalyzePanelProps) {
   const [jobDescription, setJobDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +48,13 @@ export default function AnalyzePanel({ resumeText }: AnalyzePanelProps) {
         return;
       }
 
-      setResult(data as JobMatchResult);
+      const matchResult = data as JobMatchResult;
+      setResult(matchResult);
+      try {
+        onResult?.(matchResult);
+      } catch (err) {
+        console.error("onResult callback failed", err);
+      }
     } catch {
       setError("Could not reach the analysis service");
     } finally {
