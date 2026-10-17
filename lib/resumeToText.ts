@@ -65,6 +65,20 @@ export function resumeToText(data: ResumeData): string {
     data.skills.flatMap((skill) => linesFor(skill)),
   );
 
+  pushSection(
+    lines,
+    "Certifications",
+    (data.certifications ?? []).flatMap((certification) =>
+      linesFor(certification),
+    ),
+  );
+
+  pushSection(
+    lines,
+    "Languages",
+    (data.languages ?? []).flatMap((language) => linesFor(language)),
+  );
+
   const projects = data.projects.flatMap((item) => [
     ...linesFor([item.name, item.link].filter(Boolean).join(" ")),
     ...linesFor(item.description),

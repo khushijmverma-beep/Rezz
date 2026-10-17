@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { ResumeData } from "@/lib/types/resume";
 import { resumeToText } from "@/lib/resumeToText";
 
@@ -16,7 +16,10 @@ function sanitizeFilename(title: string): string {
     .trim()
     .replace(/[. ]+$/g, "");
 
-  return sanitized || "resume";
+  if (!sanitized || /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i.test(sanitized)) {
+    return "resume";
+  }
+  return sanitized;
 }
 
 export default function DownloadMenu({
@@ -25,7 +28,7 @@ export default function DownloadMenu({
   downloadPdf,
 }: DownloadMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState("");
   const filename = sanitizeFilename(title);
 
   function downloadText() {
@@ -39,12 +42,23 @@ export default function DownloadMenu({
     document.body.appendChild(link);
     link.click();
     link.remove();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
     setIsOpen(false);
   }
 
+  function downloadPdfFile() {
+    try {
+      downloadPdf(title);
+      setError("");
+      setIsOpen(false);
+    } catch (downloadError) {
+      console.error("Could not download resume as PDF:", downloadError);
+      setError("Couldn't prepare the PDF. Please try again.");
+    }
+  }
+
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative">
       <button
         type="button"
         aria-haspopup="menu"
@@ -54,6 +68,11 @@ export default function DownloadMenu({
       >
         Download
       </button>
+      {error && (
+        <p role="alert" className="absolute right-0 mt-2 w-56 text-xs text-red-600">
+          {error}
+        </p>
+      )}
       {isOpen && (
         <div
           role="menu"
@@ -62,10 +81,7 @@ export default function DownloadMenu({
           <button
             type="button"
             role="menuitem"
-            onClick={() => {
-              downloadPdf(title);
-              setIsOpen(false);
-            }}
+            onClick={downloadPdfFile}
             className="block w-full rounded-md px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
           >
             Download PDF
