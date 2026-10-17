@@ -7,7 +7,7 @@ import type {
 import { callLLM, hasConfiguredAIProvider } from "@/lib/llm";
 import { GeminiError } from "@/lib/gemini";
 
-type GeminiJobMatch = Omit<JobMatchResult, "overallFit"> & {
+type GeminiJobMatch = Omit<JobMatchResult, "overallFit" | "emptyReasons"> & {
     overallFit: { matchScore: number; summary: string };
 };
 
@@ -61,6 +61,10 @@ function isJobMatchRequest(value: unknown): value is JobMatchRequest {
         value.jobDescription.trim().length > 0
     );
 }
+
+
+
+
 
 function parseGeminiJobMatch(text: string): GeminiJobMatch | null {
     const candidates = [
@@ -222,13 +226,22 @@ export async function POST(req: Request) {
         Math.min(100, Math.max(0, parsed.overallFit.matchScore))
     );
     const result: JobMatchResult = {
-        ...parsed,
+        missingKeywords: parsed.missingKeywords,
+        matchedKeywords: [],
+        skillGaps: parsed.skillGaps.map((gap) => ({
+            ...gap,
+            jobDescriptionEvidence: "",
+        })),
+        suggestedRewordings: parsed.suggestedRewordings,
+        strengths: [],
+        categoryScores: { skills: 0, experience: 0, education: 0, keywords: 0 },
+        actionItems: [],
         overallFit: {
             matchScore,
             rating: toRating(matchScore),
             summary: parsed.overallFit.summary,
         },
+        emptyReasons: {},
     };
-
     return Response.json(result);
 }
