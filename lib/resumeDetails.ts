@@ -92,6 +92,14 @@ export function normalizeDetails(raw: unknown): ResumeData {
 const sameItem = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 const hasContent = (it: object) =>
   Object.values(it).some((v) => (Array.isArray(v) ? v.length > 0 : String(v).trim() !== ""));
+const hasDetails = (details: ResumeData) =>
+  Object.values(details).some((value) =>
+    typeof value === "string"
+      ? value.trim() !== ""
+      : value.some((item) =>
+          typeof item === "string" ? item.trim() !== "" : hasContent(item),
+        ),
+  );
 
 function appendNew<T>(base: T[], incoming: T[]): T[] {
   const out = [...base];
@@ -142,7 +150,7 @@ export async function getResumeDetails(uid: string): Promise<ResumeData | null> 
   if (!snap.exists()) return null;
   const data = snap.data();
   const details = normalizeDetails(data.defaultDetails ?? data);
-  return sameItem(details, emptyDetails) ? null : details;
+  return hasDetails(details) ? details : null;
 }
 
 export async function saveResumeDetails(uid: string, data: ResumeData): Promise<void> {

@@ -2,6 +2,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { auth } from "@/lib/firebase";
+import { getResumeDetails } from "@/lib/resumeDetails";
 
 type TemplateId = "blank" | "modern" | "professional" | "simple";
 type StartOption = "default" | "empty" | "upload";
@@ -44,6 +46,10 @@ export default function NewResumeModal({
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [hasSavedDefaultDetails, setHasSavedDefaultDetails] = useState(false);
+  const [isCheckingDefaultDetails, setIsCheckingDefaultDetails] = useState(false);
+  const [defaultDetailsError, setDefaultDetailsError] = useState("");
+  const canUseDefaultDetails = hasDefaultDetails || hasSavedDefaultDetails;
 
   useEffect(() => {
     if (isOpen) {
@@ -56,6 +62,43 @@ export default function NewResumeModal({
       setIsCreating(false);
     }
   }, [isOpen, initialTemplate, hasDefaultDetails]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let active = true;
+    void Promise.resolve()
+      .then(() => {
+        if (!active) return null;
+        setHasSavedDefaultDetails(false);
+        setDefaultDetailsError("");
+        setIsCheckingDefaultDetails(true);
+
+        const user = auth.currentUser;
+        if (!user) {
+          throw new Error("No authenticated user is available.");
+        }
+        return getResumeDetails(user.uid);
+      })
+      .then((details) => {
+        if (active && details) setHasSavedDefaultDetails(true);
+      })
+      .catch((loadError: unknown) => {
+        console.error("Could not check saved resume details:", loadError);
+        if (active) {
+          setDefaultDetailsError(
+            "Couldn't check your saved resume details. Please try again.",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setIsCheckingDefaultDetails(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -79,7 +122,7 @@ export default function NewResumeModal({
     }
 
     if (startOption === "upload" && !file) {
-      setError("Please select a PDF or TXT resume to upload.");
+      setError("Please select a PDF resume to upload.");
       return;
     }
 
@@ -191,7 +234,7 @@ export default function NewResumeModal({
                   ? "border-black bg-gray-50"
                   : "border-gray-200"
               } ${
-                !hasDefaultDetails
+                !canUseDefaultDetails || isCheckingDefaultDetails
                   ? "cursor-not-allowed opacity-60"
                   : "cursor-pointer"
               }`}
@@ -201,7 +244,9 @@ export default function NewResumeModal({
                 name="startOption"
                 value="default"
                 checked={startOption === "default"}
-                disabled={!hasDefaultDetails || isCreating}
+                disabled={
+                  !canUseDefaultDetails || isCheckingDefaultDetails || isCreating
+                }
                 onChange={() => setStartOption("default")}
                 className="mt-1"
               />
@@ -212,14 +257,26 @@ export default function NewResumeModal({
                 <span className="mt-1 block text-xs text-gray-500">
                   Start with your saved personal and work information.
                 </span>
-                {!hasDefaultDetails && (
-                  <a
-                    href="/resume-details"
-                    className="mt-1 inline-block text-xs font-medium underline"
-                  >
-                    Add resume details
-                  </a>
+                {isCheckingDefaultDetails && (
+                  <span className="mt-1 block text-xs text-gray-500">
+                    Checking saved details…
+                  </span>
                 )}
+                {defaultDetailsError && (
+                  <span role="alert" className="mt-1 block text-xs text-red-600">
+                    {defaultDetailsError}
+                  </span>
+                )}
+                {!canUseDefaultDetails &&
+                  !isCheckingDefaultDetails &&
+                  !defaultDetailsError && (
+                    <a
+                      href="/resume-details"
+                      className="mt-1 inline-block text-xs font-medium underline"
+                    >
+                      Add resume details
+                    </a>
+                  )}
               </span>
             </label>
 
@@ -270,7 +327,7 @@ export default function NewResumeModal({
                   Upload a previous resume
                 </span>
                 <span className="mt-1 block text-xs text-gray-500">
-                  Upload a PDF or TXT file to reuse its information.
+                  Upload a PDF file to reuse its information.
                 </span>
                 {startOption === "upload" && (
                   <input
