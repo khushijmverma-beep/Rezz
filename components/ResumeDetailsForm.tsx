@@ -191,6 +191,9 @@ export default function ResumeDetailsForm({
 
       <ChipInput title="Skills" placeholder="Add a skill and press Enter" items={value.skills} onChange={(v) => set("skills", v)} />
 
+      <ChipInput title="Certifications" placeholder="Add a certification and press Enter" items={value.certifications ?? []} onChange={(v) => set("certifications", v)} />
+      <ChipInput title="Languages" placeholder="Add a language and press Enter" items={value.languages ?? []} onChange={(v) => set("languages", v)} />
+
       {/* Projects */}
       <section className={card}>
         <h2 className="mb-2 text-lg font-semibold">Projects</h2>
