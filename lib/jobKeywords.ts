@@ -69,3 +69,33 @@ export function compareKeywords(
   return { matched: matched.sort(byOrder), missing: missing.sort(byOrder) };
   return { matched, missing };
 }
+
+
+export type Evidence = { phrase: string; section: "required" | "preferred" | null };
+
+export function findEvidence(skillName: string, text: string): Evidence {
+  const result: Evidence = { phrase: "", section: null };
+  const entry = COMPILED.find((c) => c.name === skillName);
+  if (!entry) return result;
+
+  let section: "required" | "preferred" | null = null;
+  for (const raw of text.split(/\r?\n/)) {
+    const line = normalize(raw).replace(/^[-•*]\s*/, "");
+    if (!line) continue;
+
+    if (line.length < 60 && line.endsWith(":")) {
+      if (/required|minimum|must|basic/i.test(line)) section = "required";
+      else if (/preferred|nice to have|bonus|plus/i.test(line)) section = "preferred";
+      else section = null;
+      continue;
+    }
+
+    if (!entry.regex.test(line)) continue;
+    if (!result.phrase) result.phrase = line;
+    if (section) {
+      result.section = section;
+      break;
+    }
+  }
+  return result;
+}
