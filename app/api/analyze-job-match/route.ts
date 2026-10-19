@@ -327,7 +327,7 @@ export async function POST(req: Request) {
         note:
           fromModel?.note ||
           `This posting asks for ${skill}, and it does not appear in your resume. If you have used it, add it with a specific example; if not, a small project using ${skill} would close this gap.`,
-        jobDescriptionEvidence: modelQuote || evidence.phrase,
+        jobDescriptionEvidence: evidence.phrase || modelQuote,
       };
     })
     .sort((a, b) =>

@@ -67,7 +67,6 @@ export function compareKeywords(
     COMPILED.find((c) => c.name === a)!.order -
     COMPILED.find((c) => c.name === b)!.order;
   return { matched: matched.sort(byOrder), missing: missing.sort(byOrder) };
-  return { matched, missing };
 }
 
 
