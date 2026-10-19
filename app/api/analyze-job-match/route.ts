@@ -141,7 +141,6 @@ const TITLE_WORDS =
 const titlesIn = (s: string): string[] =>
   (s.match(TITLE_WORDS) ?? []).map((w) => w.toLowerCase());
 
-
 function addsNothingNew(original: string, suggested: string): boolean {
   if (compareKeywords(original, suggested).missing.length > 0) return false;
   const origNums = numbersIn(original);
@@ -153,6 +152,16 @@ function addsNothingNew(original: string, suggested: string): boolean {
   return true;
 }
 
+function claimsMissingSkill(item: string, missing: string[]): boolean {
+  const mentioned = compareKeywords("", item).missing;
+  if (!mentioned.some((skill) => missing.includes(skill))) return false;
+  const tellsToAdd =
+    /\b(add|include|list|mention|put|write)\b.*\b(resume|cv|skills section|experience section)\b/i.test(
+      item,
+    );
+  const conditional = /\b(once|after|when|if)\b/i.test(item);
+  return tellsToAdd && !conditional;
+}
 
 function toRating(matchScore: number): "strong" | "medium" | "weak" {
   if (matchScore >= 75) return "strong";
@@ -259,7 +268,6 @@ function responseForLLMError(err: GeminiError): Response {
   );
 }
 
-
 export async function POST(req: Request) {
   if (!hasConfiguredAIProvider()) {
     return Response.json({ error: "AI isn't configured" }, { status: 500 });
@@ -311,8 +319,9 @@ export async function POST(req: Request) {
   const resume = body.resumeText;
   const jd = body.jobDescription;
 
-  
-  const modelGaps = new Map(parsed.skillGaps.map((g) => [g.skill.toLowerCase(), g]));
+  const modelGaps = new Map(
+    parsed.skillGaps.map((g) => [g.skill.toLowerCase(), g]),
+  );
   const skillGaps: SkillGap[] = keywords.missing
     .map((skill): SkillGap => {
       const fromModel = modelGaps.get(skill.toLowerCase());
@@ -334,7 +343,6 @@ export async function POST(req: Request) {
       a.importance === b.importance ? 0 : a.importance === "required" ? -1 : 1,
     );
 
-  
   const seen = new Set<string>();
   const suggestedRewordings = parsed.suggestedRewordings
     .filter((r) => {
@@ -350,19 +358,26 @@ export async function POST(req: Request) {
     })
     .slice(0, 5);
 
-  
-  const strengths = parsed.strengths.filter((s) => contains(resume, s.evidence)).slice(0, 5);
+  const strengths = parsed.strengths
+    .filter((s) => contains(resume, s.evidence))
+    .slice(0, 5);
 
   const total = keywords.matched.length + keywords.missing.length;
   const keywordScore =
     total === 0 ? 100 : Math.round((keywords.matched.length / total) * 100);
 
+  const honestActions = parsed.actionItems.filter(
+    (item) => !claimsMissingSkill(item, keywords.missing),
+  );
   const actionItems =
-    parsed.actionItems.length > 0
-      ? parsed.actionItems.slice(0, 5)
+    honestActions.length > 0
+      ? honestActions.slice(0, 5)
       : skillGaps
           .slice(0, 3)
-          .map((g) => `Build a small project that uses ${g.skill}, then add it to your resume.`);
+          .map(
+            (g) =>
+              `Build a small project that uses ${g.skill}, then add it to your resume.`,
+          );
 
   const emptyReasons: JobMatchResult["emptyReasons"] = {};
   if (keywords.missing.length === 0) {
@@ -401,4 +416,4 @@ export async function POST(req: Request) {
   };
 
   return Response.json(result);
-};
+}
