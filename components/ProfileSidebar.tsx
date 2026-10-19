@@ -4,25 +4,42 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { Home, FileText, Info, LogOut, Activity } from "lucide-react";
+import { Home, FileText, Info, LogOut } from "lucide-react";
 import { app } from "@/lib/firebase";
+import { getPhoto } from "@/lib/profilePhoto";
 import Avatar from "@/components/Avatar";
 
 // change these hrefs if your routes are named differently
 const NAV = [
-  { href: "/", label: "Home", Icon: Home },
+  { href: "/dashboard", label: "Home", Icon: Home },
   { href: "/resume-details", label: "Resume Details", Icon: FileText },
   { href: "/about", label: "About", Icon: Info },
-  { href: "/activity", label: "Activity", Icon: Activity}
 ];
 
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [photo, setPhoto] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => onAuthStateChanged(getAuth(app), setUser), []);
+
+  // each time the panel opens, load the saved photo
+  const uid = user?.uid;
+  useEffect(() => {
+    if (!open || !uid) return;
+    let cancelled = false;
+    getPhoto(uid)
+      .then((p) => { if (!cancelled) setPhoto(p); })
+      .catch((e) => console.error(e)); // fall back to Google photo or initials
+    return () => { cancelled = true; };
+  }, [open, uid]);
+
+  // signed out: clear the cached photo
+  useEffect(() => {
+    if (!uid) setPhoto(null);
+  }, [uid]);
 
   const handleLogout = async () => {
     await signOut(getAuth(app));
@@ -30,8 +47,7 @@ export default function Sidebar() {
     router.push("/"); // landing page
   };
 
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   const tabClass = (href: string) =>
     `flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
@@ -42,6 +58,7 @@ export default function Sidebar() {
   if (!user) return null;
 
   const name = user.displayName || user.email?.split("@")[0] || "";
+  const avatarSrc = photo ?? user.photoURL ?? null;
 
   return (
     <div>
@@ -58,14 +75,21 @@ export default function Sidebar() {
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <p className="mb-5 text-3xl font-bold">Rezz</p>
-        <div className="mb-4 flex items-center gap-3">
-          <Avatar name={name} size={48} />
+        <p className="mb-5 text-xl font-bold">Rezz</p>
+
+        <Link
+          href="/settings"
+          onClick={() => setOpen(false)}
+          className={`mb-4 flex items-center gap-3 rounded-lg p-2 transition-colors ${
+            isActive("/settings") ? "bg-gray-300" : "hover:bg-gray-200"
+          }`}
+        >
+          <Avatar name={name} size={48} src={avatarSrc} />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">{name}</p>
-            <p className="truncate text-xs text-gray-600">{user.email}</p>
+            <p className="truncate text-sm font-semibold text-black!">{name}</p>
+            <p className="truncate text-xs text-gray-600!">{user.email}</p>
           </div>
-        </div>
+        </Link>
 
         <nav className="flex flex-col gap-1">
           {NAV.map(({ href, label, Icon }) => (
@@ -77,7 +101,7 @@ export default function Sidebar() {
 
         <button
           onClick={handleLogout}
-          className="mt-auto flex w-full cursor-pointer items-center gap-3 rounded px-3 py-2 text-left text-sm text-black hover:bg-gray-200"
+          className="mt-auto flex w-full cursor-pointer items-center gap-3 rounded px-3 py-2 text-left text-sm text-red-600 hover:bg-gray-200"
         >
           <LogOut size={18} /> Log out
         </button>
