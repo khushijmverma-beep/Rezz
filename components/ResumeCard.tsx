@@ -1,75 +1,79 @@
 
 "use client";
 
-import Image from "next/image";
+import Link from "next/link";
+import ResumeMenu from "@/components/ResumeMenu";
+import ResumeThumbnail from "@/components/templates/ResumeThumbnail";
+import type { Draft } from "@/lib/drafts";
+import type { TemplateId } from "@/lib/types/resume";
 
 type ResumeCardProps = {
-  name: string;
-  updatedAt: string;
-  resumeId: string;
-  templateId: string;
+  draft: Draft;
+  viewMode: "grid" | "list";
+  dateLabel: string;
+  dateKind?: "Created" | "Modified";
+  onRename: (draft: Draft) => void;
+  onDuplicate: (draft: Draft) => void;
+  onDownloadText: (draft: Draft) => void;
   onDelete: (resumeId: string) => void;
 };
 
 export default function ResumeCard({
-  name,
-  updatedAt,
-  resumeId,
-  templateId,
+  draft,
+  viewMode,
+  dateLabel,
+  dateKind,
+  onRename,
+  onDuplicate,
+  onDownloadText,
   onDelete,
 }: ResumeCardProps) {
+  const isList = viewMode === "list";
+
   return (
-    <div className="group relative">
-      <button
-        type="button"
-        onClick={() => {
-          window.location.href = `/resume/${resumeId}`;
-        }}
-        className="w-full text-left"
+    <article
+      className={`relative rounded-xl border border-gray-200 bg-white ${
+        isList ? "flex items-center gap-4 p-3" : "overflow-visible"
+      }`}
+    >
+      <Link
+        href={`/resume/${draft.id}`}
+        className={isList ? "min-w-0 flex-1" : "block"}
       >
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-          <div className="relative flex aspect-[8.5/5] items-center justify-center overflow-hidden bg-gray-100">
-            {templateId === "blank" ? (
-              <div className="flex h-full w-full items-center justify-center bg-gray-50">
-                <span className="text-4xl font-light text-gray-300">
-                  Resume
-                </span>
-              </div>
-            ) : (
-              <Image
-                src={`/templates/${templateId}.png`}
-                alt={`${name} thumbnail`}
-                fill
-                sizes="320px"
-                className="object-cover object-top"
-                onError={(event) => {
-                  event.currentTarget.style.display = "none";
-                }}
-              />
+        {!isList && (
+          <div className="overflow-hidden rounded-t-xl bg-gray-50">
+            <ResumeThumbnail
+              templateId={draft.templateId as TemplateId}
+              data={draft.data}
+            />
+          </div>
+        )}
+
+        <div className={isList ? "min-w-0" : "p-4"}>
+          <h3 className="truncate font-semibold text-gray-900">
+            {draft.title}
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            {isList && dateKind && (
+              <span className="mr-1 text-xs font-medium">{dateKind}</span>
             )}
-          </div>
-
-          <div className="p-4 pr-12">
-            <h3 className="truncate text-base font-semibold text-gray-900">
-              {name}
-            </h3>
-
-            <p className="mt-1 text-sm text-gray-500">
-              Edited {updatedAt}
-            </p>
-          </div>
+            {dateLabel}
+          </p>
         </div>
-      </button>
+      </Link>
 
-      <button
-        type="button"
-        aria-label={`Delete ${name}`}
-        title="Delete resume"
-        onClick={() => onDelete(resumeId)}
-        className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-xl text-gray-600 shadow-sm hover:bg-gray-100"
-      >
-        ⋮
-      </button>
-    </div>
+      <div className={isList ? "shrink-0" : "absolute right-2 top-2"}>
+        <ResumeMenu
+          onOpen={() => { window.location.href = `/resume/${draft.id}`; }}
+          onRename={() => onRename(draft)}
+          onDuplicate={() => onDuplicate(draft)}
+          onDownloadPdf={() => {
+            window.location.href = `/resume/${draft.id}?download=pdf`;
+          }}
+          onDownloadText={() => onDownloadText(draft)}
+          onDelete={() => onDelete(draft.id)}
+        />
+      </div>
+    </article>
   );
 }

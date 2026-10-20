@@ -4,8 +4,9 @@
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
 import { getResumeDetails } from "@/lib/resumeDetails";
+import { TEMPLATES } from "@/lib/templates";
+import type { TemplateId } from "@/lib/types/resume";
 
-type TemplateId = "blank" | "modern" | "professional" | "simple";
 type StartOption = "default" | "empty" | "upload";
 
 type NewResumeModalProps = {
@@ -22,12 +23,9 @@ type NewResumeModalProps = {
   }) => Promise<void>;
 };
 
-const templates: { id: TemplateId; name: string }[] = [
-  { id: "blank", name: "Blank resume" },
-  { id: "modern", name: "Modern" },
-  { id: "professional", name: "Professional" },
-  { id: "simple", name: "Simple" },
-];
+const templates: { id: TemplateId; name: string }[] = TEMPLATES.map(
+  ({ id, label }) => ({ id, name: label }),
+);
 
 export default function NewResumeModal({
   isOpen,
@@ -122,7 +120,7 @@ export default function NewResumeModal({
     }
 
     if (startOption === "upload" && !file) {
-      setError("Please select a PDF resume to upload.");
+      setError("Please select a PDF or TXT resume to upload.");
       return;
     }
 
@@ -270,13 +268,13 @@ export default function NewResumeModal({
                 {!canUseDefaultDetails &&
                   !isCheckingDefaultDetails &&
                   !defaultDetailsError && (
-                    <a
-                      href="/resume-details"
-                      className="mt-1 inline-block text-xs font-medium underline"
-                    >
-                      Add resume details
-                    </a>
-                  )}
+                  <a
+                    href="/resume-details"
+                    className="mt-1 inline-block text-xs font-medium underline"
+                  >
+                    Add resume details
+                  </a>
+                )}
               </span>
             </label>
 
@@ -327,7 +325,7 @@ export default function NewResumeModal({
                   Upload a previous resume
                 </span>
                 <span className="mt-1 block text-xs text-gray-500">
-                  Upload a PDF file to reuse its information.
+                  Upload a PDF or TXT file to reuse its information.
                 </span>
                 {startOption === "upload" && (
                   <input
