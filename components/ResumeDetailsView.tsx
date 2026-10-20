@@ -104,6 +104,12 @@ export default function ResumeDetailsView({
         ) : <Empty />}
       </Section>
 
+      {(["certifications", "languages"] as const).map((key) => (
+        <Section key={key} title={key === "certifications" ? "Certifications" : "Languages"}>
+          {data[key]?.length ? <p className="text-sm text-gray-700">{data[key]?.join(", ")}</p> : <Empty />}
+        </Section>
+      ))}
+
       <Section title="Projects">
         {data.projects.length ? (
           <div className="space-y-4">
