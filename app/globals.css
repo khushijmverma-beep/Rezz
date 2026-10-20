@@ -78,3 +78,26 @@ button, input, textarea, select { font: inherit; }
 
 
 
+
+/* The editor mounts a separate, non-editable copy directly under body. */
+#print-root { display: none; }
+@media print {
+  @page { size: letter; margin: 0; }
+  body:has(> #print-root) > *:not(#print-root) { display: none !important; }
+  body:has(> #print-root) { margin: 0; background: white; }
+  #print-root { display: block !important; width: 8.5in; color-scheme: light; }
+  #print-root > article {
+    width: 8.5in;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    margin: 0;
+    box-shadow: none;
+    overflow: visible;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  #print-root h1, #print-root h2 { break-after: avoid; page-break-after: avoid; }
+  #print-root section > div { break-inside: avoid; page-break-inside: avoid; }
+  #print-root p, #print-root li { orphans: 3; widows: 3; }
+}

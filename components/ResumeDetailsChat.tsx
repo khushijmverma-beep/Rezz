@@ -18,6 +18,8 @@ const FIELD_LABELS: Record<keyof ResumeData, string> = {
   summary: "Summary",
   experience: "Experience",
   education: "Education",
+  certifications: "Certifications",
+  languages: "Languages",
   skills: "Skills",
   projects: "Projects",
   awards: "Awards",

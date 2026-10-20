@@ -78,6 +78,8 @@ export function normalizeDetails(raw: unknown): ResumeData {
       gpa: str(e.gpa),
     })),
     skills: strList(r.skills),
+    certifications: strList(r.certifications),
+    languages: strList(r.languages),
     projects: objList(r.projects).map((p) => ({
       name: str(p.name),
       link: str(p.link || p.url),
@@ -117,6 +119,8 @@ export function mergeDetails(current: ResumeData, incomingRaw: unknown): ResumeD
     experience: appendNew(current.experience, inc.experience),
     education: appendNew(current.education, inc.education),
     skills: appendNew(current.skills, inc.skills),
+    certifications: appendNew(current.certifications ?? [], inc.certifications ?? []),
+    languages: appendNew(current.languages ?? [], inc.languages ?? []),
     projects: appendNew(current.projects, inc.projects),
     awards: appendNew(current.awards, inc.awards),
   };
@@ -125,6 +129,8 @@ export function mergeDetails(current: ResumeData, incomingRaw: unknown): ResumeD
 export function cleanDetails(d: ResumeData): ResumeData {
   return {
     ...d,
+    certifications: strList(d.certifications),
+    languages: strList(d.languages),
     skills: d.skills.map((s) => s.trim()).filter(Boolean),
     awards: d.awards.map((s) => s.trim()).filter(Boolean),
     experience: d.experience
