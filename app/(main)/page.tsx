@@ -373,6 +373,7 @@ export default function Home() {
                 key={draft.id}
                 draft={draft}
                 viewMode={viewMode}
+                dateKind={sortBy === "createdAt" ? "Created" : "Modified"}
                 dateLabel={new Date(
                   sortBy === "createdAt"
                     ? draft.createdAt

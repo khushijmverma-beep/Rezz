@@ -2,8 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TEMPLATES } from "@/lib/templates";
+import type { TemplateId } from "@/lib/types/resume";
 
-type TemplateId = "blank" | "modern" | "professional" | "simple";
 type StartOption = "default" | "empty" | "upload";
 
 type NewResumeModalProps = {
@@ -20,12 +21,9 @@ type NewResumeModalProps = {
   }) => Promise<void>;
 };
 
-const templates: { id: TemplateId; name: string }[] = [
-  { id: "blank", name: "Blank resume" },
-  { id: "modern", name: "Modern" },
-  { id: "professional", name: "Professional" },
-  { id: "simple", name: "Simple" },
-];
+const templates: { id: TemplateId; name: string }[] = TEMPLATES.map(
+  ({ id, label }) => ({ id, name: label }),
+);
 
 export default function NewResumeModal({
   isOpen,
