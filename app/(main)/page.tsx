@@ -17,6 +17,7 @@ import {
   type ResumeData,
   type TemplateId,
 } from "@/lib/types/resume";
+import { getResumeDetails } from "@/lib/resumeDetails";
 import { templates } from "@/lib/templates";
 import TemplateCard from "@/components/TemplateCard";
 import ResumeCard from "@/components/ResumeCard";
@@ -130,7 +131,13 @@ export default function Home() {
 
     let data: ResumeData = emptyResumeData;
 
-    if (details.startOption === "upload") {
+    if (details.startOption === "default") {
+      const savedDetails = await getResumeDetails(userId);
+      if (!savedDetails) {
+        throw new Error("No saved resume details were found.");
+      }
+      data = { ...emptyResumeData, ...savedDetails };
+    } else if (details.startOption === "upload") {
       if (!details.file) {
         throw new Error("Please select a PDF to upload.");
       }

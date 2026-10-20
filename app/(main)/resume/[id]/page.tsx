@@ -1,18 +1,29 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AnalyzePanel from "@/components/AnalyzePanel";
+import DownloadMenu from "@/components/DownloadMenu";
+import PrintRoot from "@/components/templates/PrintRoot";
+import { logActivity, saveAnalysis } from "@/lib/activity";
 import { createDraft, getDraft, updateDraft, type Draft } from "@/lib/drafts";
+import { downloadPdf } from "@/lib/exportResume";
 import { resumeToText } from "@/lib/resumeToText";
 import { getTemplate } from "@/lib/templates";
+import type { JobMatchResult } from "@/lib/types/job-match";
 import { emptyResumeData, type ResumeData } from "@/lib/types/resume";
 import { useAuth } from "@/lib/useAuth";
 import styles from "./page.module.css";
 
 type SaveStatus = "saving" | "saved" | "retrying";
 type DraftContent = { title: string; data: ResumeData };
+
+function trackActivity(uid: string, type: "edit" | "export" | "analysis") {
+  void logActivity(uid, type).catch((error: unknown) => {
+    console.error("Failed to record resume activity:", error);
+  });
+}
 
 const resumeKeys = Object.keys(emptyResumeData) as (keyof ResumeData)[];
 
@@ -50,6 +61,9 @@ export default function ResumeDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const downloadQuery = searchParams.toString();
+  const shouldDownloadPdf = searchParams.get("download") === "pdf";
   const { user, loading: authLoading } = useAuth();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [title, setTitle] = useState("");
@@ -63,7 +77,9 @@ export default function ResumeDetailPage() {
   const creatingDraftRef = useRef(false);
   const savedContentRef = useRef<string | null>(null);
   const savePromiseRef = useRef<Promise<void> | null>(null);
+  const autoDownloadHandledRef = useRef(false);
   const [createRetry, setCreateRetry] = useState(0);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   useEffect(() => {
     renderedDataRef.current = data;
@@ -85,7 +101,12 @@ export default function ResumeDetailPage() {
       const loadedDraft = await getDraft(user.uid, id);
       setDraft(loadedDraft);
       const loadedTitle = loadedDraft?.title ?? "";
-      const loadedData = loadedDraft?.data ?? emptyResumeData;
+      const loadedData = {
+        ...emptyResumeData,
+        ...loadedDraft?.data,
+        certifications: loadedDraft?.data.certifications ?? [],
+        languages: loadedDraft?.data.languages ?? [],
+      };
       titleRef.current = loadedTitle;
       dataRef.current = loadedData;
       renderedDataRef.current = loadedData;
@@ -103,6 +124,80 @@ export default function ResumeDetailPage() {
       setLoading(false);
     }
   }, [id, user]);
+
+  useEffect(() => {
+    if (
+      !shouldDownloadPdf ||
+      !draft ||
+      !user ||
+      loading ||
+      autoDownloadHandledRef.current
+    ) {
+      return;
+    }
+
+    const params = new URLSearchParams(downloadQuery);
+    params.delete("download");
+    const remainingQuery = params.toString();
+    const resumeUrl = `/resume/${id}${remainingQuery ? `?${remainingQuery}` : ""}`;
+    const startedAt = Date.now();
+    let frame = 0;
+    let timeout = 0;
+    let active = true;
+
+    const removeDownloadQuery = () => {
+      router.replace(resumeUrl, { scroll: false });
+    };
+
+    const finish = () => {
+      active = false;
+      window.clearTimeout(timeout);
+      removeDownloadQuery();
+    };
+
+    const waitForPrintRoot = () => {
+      if (!active) return;
+
+      if (document.querySelector("#print-root > article")) {
+        autoDownloadHandledRef.current = true;
+        try {
+          downloadPdf(titleRef.current);
+          trackActivity(user.uid, "export");
+        } catch (error) {
+          console.error("Could not download resume as PDF:", error);
+          setDownloadError("Couldn't prepare the PDF. Please try again.");
+        } finally {
+          finish();
+        }
+        return;
+      }
+
+      if (Date.now() - startedAt > 5000) {
+        autoDownloadHandledRef.current = true;
+        setDownloadError("Couldn't prepare the PDF. Please try again.");
+        finish();
+        return;
+      }
+
+      frame = window.requestAnimationFrame(waitForPrintRoot);
+    };
+
+    frame = window.requestAnimationFrame(waitForPrintRoot);
+    timeout = window.setTimeout(() => {
+      if (!active) return;
+      active = false;
+      autoDownloadHandledRef.current = true;
+      window.cancelAnimationFrame(frame);
+      setDownloadError("Couldn't prepare the PDF. Please try again.");
+      removeDownloadQuery();
+    }, 6000);
+
+    return () => {
+      active = false;
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
+    };
+  }, [downloadQuery, draft, id, loading, router, shouldDownloadPdf, user]);
 
   useEffect(() => {
     if (authLoading || !user || id === "new") return;
@@ -158,6 +253,7 @@ export default function ResumeDetailPage() {
           try {
             await updateDraft(user.uid, id, snapshot);
             savedContentRef.current = serializedSnapshot;
+            trackActivity(user.uid, "edit");
             if (
               serializedSnapshot ===
               JSON.stringify({ title: titleRef.current, data: dataRef.current })
@@ -268,6 +364,7 @@ export default function ResumeDetailPage() {
   }
 
   const TemplateComponent = getTemplate(draft.templateId)?.Component;
+  const printTemplateId = getTemplate(draft.templateId)?.id ?? "blank";
 
   return (
     <main className={styles.resumeView}>
@@ -290,14 +387,27 @@ export default function ResumeDetailPage() {
               setSaveStatus("saving");
             }}
           />
-          <span className={styles.saveStatus} aria-live="polite">
-            {saveStatus === "saving"
-              ? "Saving..."
-              : saveStatus === "saved"
-                ? "Saved"
-                : "Couldn't save, retrying"}
-          </span>
+          <div className={styles.toolbarActions}>
+            <span className={styles.saveStatus} aria-live="polite">
+              {saveStatus === "saving"
+                ? "Saving..."
+                : saveStatus === "saved"
+                  ? "Saved"
+                  : "Couldn't save, retrying"}
+            </span>
+            <DownloadMenu
+              title={title}
+              data={data}
+              downloadPdf={downloadPdf}
+              onExport={() => trackActivity(user.uid, "export")}
+            />
+          </div>
         </header>
+        {downloadError && (
+          <p role="alert" className="mb-3 text-sm text-red-600">
+            {downloadError}
+          </p>
+        )}
         <div className={styles.paperScroller}>
           {TemplateComponent ? (
             <TemplateComponent data={data} editable onChange={handleDataChange} />
@@ -307,8 +417,22 @@ export default function ResumeDetailPage() {
         </div>
       </section>
       <aside className={styles.sidebar} aria-label="Resume analysis">
-        <AnalyzePanel resumeText={resumeToText(data)} />
+        <AnalyzePanel
+          resumeText={resumeToText(data)}
+          onResult={(result: JobMatchResult) => {
+            trackActivity(user.uid, "analysis");
+            void saveAnalysis(user.uid, {
+              draftId: id,
+              draftTitle: titleRef.current,
+              matchScore: result.overallFit.matchScore,
+              rating: result.overallFit.rating,
+            }).catch((error: unknown) => {
+              console.error("Failed to save resume analysis:", error);
+            });
+          }}
+        />
       </aside>
+      <PrintRoot templateId={printTemplateId} data={data} />
     </main>
   );
 }
