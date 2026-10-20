@@ -8,6 +8,7 @@ type DownloadMenuProps = {
   title: string;
   data: ResumeData;
   downloadPdf: (title: string) => void;
+  onExport: () => void;
 };
 
 function sanitizeFilename(title: string): string {
@@ -26,6 +27,7 @@ export default function DownloadMenu({
   title,
   data,
   downloadPdf,
+  onExport,
 }: DownloadMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState("");
@@ -43,12 +45,14 @@ export default function DownloadMenu({
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    onExport();
     setIsOpen(false);
   }
 
   function downloadPdfFile() {
     try {
       downloadPdf(title);
+      onExport();
       setError("");
       setIsOpen(false);
     } catch (downloadError) {

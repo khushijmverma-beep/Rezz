@@ -6,16 +6,24 @@ import Link from "next/link";
 import AnalyzePanel from "@/components/AnalyzePanel";
 import DownloadMenu from "@/components/DownloadMenu";
 import PrintRoot from "@/components/templates/PrintRoot";
+import { logActivity, saveAnalysis } from "@/lib/activity";
 import { createDraft, getDraft, updateDraft, type Draft } from "@/lib/drafts";
 import { downloadPdf } from "@/lib/exportResume";
 import { resumeToText } from "@/lib/resumeToText";
 import { getTemplate } from "@/lib/templates";
+import type { JobMatchResult } from "@/lib/types/job-match";
 import { emptyResumeData, type ResumeData } from "@/lib/types/resume";
 import { useAuth } from "@/lib/useAuth";
 import styles from "./page.module.css";
 
 type SaveStatus = "saving" | "saved" | "retrying";
 type DraftContent = { title: string; data: ResumeData };
+
+function trackActivity(uid: string, type: "edit" | "export" | "analysis") {
+  void logActivity(uid, type).catch((error: unknown) => {
+    console.error("Failed to record resume activity:", error);
+  });
+}
 
 const resumeKeys = Object.keys(emptyResumeData) as (keyof ResumeData)[];
 
@@ -121,6 +129,7 @@ export default function ResumeDetailPage() {
     if (
       !shouldDownloadPdf ||
       !draft ||
+      !user ||
       loading ||
       autoDownloadHandledRef.current
     ) {
@@ -153,6 +162,7 @@ export default function ResumeDetailPage() {
         autoDownloadHandledRef.current = true;
         try {
           downloadPdf(titleRef.current);
+          trackActivity(user.uid, "export");
         } catch (error) {
           console.error("Could not download resume as PDF:", error);
           setDownloadError("Couldn't prepare the PDF. Please try again.");
@@ -187,7 +197,7 @@ export default function ResumeDetailPage() {
       window.cancelAnimationFrame(frame);
       window.clearTimeout(timeout);
     };
-  }, [downloadQuery, draft, id, loading, router, shouldDownloadPdf]);
+  }, [downloadQuery, draft, id, loading, router, shouldDownloadPdf, user]);
 
   useEffect(() => {
     if (authLoading || !user || id === "new") return;
@@ -243,6 +253,7 @@ export default function ResumeDetailPage() {
           try {
             await updateDraft(user.uid, id, snapshot);
             savedContentRef.current = serializedSnapshot;
+            trackActivity(user.uid, "edit");
             if (
               serializedSnapshot ===
               JSON.stringify({ title: titleRef.current, data: dataRef.current })
@@ -388,6 +399,7 @@ export default function ResumeDetailPage() {
               title={title}
               data={data}
               downloadPdf={downloadPdf}
+              onExport={() => trackActivity(user.uid, "export")}
             />
           </div>
         </header>
@@ -405,7 +417,20 @@ export default function ResumeDetailPage() {
         </div>
       </section>
       <aside className={styles.sidebar} aria-label="Resume analysis">
-        <AnalyzePanel resumeText={resumeToText(data)} />
+        <AnalyzePanel
+          resumeText={resumeToText(data)}
+          onResult={(result: JobMatchResult) => {
+            trackActivity(user.uid, "analysis");
+            void saveAnalysis(user.uid, {
+              draftId: id,
+              draftTitle: titleRef.current,
+              matchScore: result.overallFit.matchScore,
+              rating: result.overallFit.rating,
+            }).catch((error: unknown) => {
+              console.error("Failed to save resume analysis:", error);
+            });
+          }}
+        />
       </aside>
       <PrintRoot templateId={printTemplateId} data={data} />
     </main>

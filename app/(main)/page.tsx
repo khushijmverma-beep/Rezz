@@ -10,6 +10,7 @@ import {
   listDrafts,
   type Draft,
 } from "@/lib/drafts";
+import { logActivity } from "@/lib/activity";
 import { getResumeDetails } from "@/lib/resumeDetails";
 import { emptyResumeData, type ResumeData } from "@/lib/types/resume";
 import TemplateCard from "@/components/TemplateCard";
@@ -130,6 +131,9 @@ export default function Home() {
       templateId: details.templateId,
       targetRole: details.targetRole,
       data,
+    });
+    void logActivity(userId, "create").catch((error: unknown) => {
+      console.error("Failed to record resume creation activity:", error);
     });
 
     setIsModalOpen(false);
