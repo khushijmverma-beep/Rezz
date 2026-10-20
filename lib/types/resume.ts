@@ -1,4 +1,4 @@
-export type TemplateId = "blank" | "modern" | "professional" | "simple";
+export type TemplateId = "blank" | "modern" | "professional" | "simple" | "classic" | "bold" | "compact";
 
 export type ExperienceItem = {
   company: string;
@@ -39,6 +39,8 @@ export type ResumeData = {
   skills: string[];
   projects: ProjectItem[];
   awards: string[];
+  certifications?: string[];
+  languages?: string[];
 };
 
 export const emptyResumeData: ResumeData = {
@@ -56,4 +58,6 @@ export const emptyResumeData: ResumeData = {
   skills: [],
   projects: [],
   awards: [],
+  certifications: [],
+  languages: [],
 };

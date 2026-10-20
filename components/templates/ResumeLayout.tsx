@@ -166,6 +166,16 @@ export default function ResumeLayout({
     ),
   );
 
+  const extraFields = (["certifications", "languages"] as const).map((key) => {
+    const values = (data[key] ?? []).filter(hasText);
+    return <div key={key}>{section(
+      key === "certifications" ? "Certifications" : "Languages",
+      values.length > 0,
+      field(values.join(", "), `${key}, separated by commas`, (value) =>
+        update(key, listFromCommas(value))),
+    )}</div>;
+  });
+
   const experience = section(
     "Experience",
     data.experience.some(hasExperience),
@@ -408,12 +418,13 @@ export default function ResumeLayout({
 
   return (
     <article className={`${styles.paper} ${styles[variant]}`} aria-label={`${variant} resume`}>
-      {variant === "modern" ? (
+      {(variant === "modern" || variant === "compact") ? (
         <>
           <aside className={styles.sidebar}>
             {section("Contact", hasContact, contact)}
             {skills}
             {awards}
+            {extraFields}
           </aside>
           <div className={styles.main}>
             {name}
@@ -429,6 +440,7 @@ export default function ResumeLayout({
           {body}
           {skills}
           {awards}
+          {extraFields}
         </>
       )}
     </article>
