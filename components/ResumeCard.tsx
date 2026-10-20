@@ -1,75 +1,96 @@
 
 "use client";
 
-import Image from "next/image";
+import Link from "next/link";
+import ResumeMenu from "@/components/ResumeMenu";
+import type { Draft } from "@/lib/drafts";
 
 type ResumeCardProps = {
-  name: string;
-  updatedAt: string;
-  resumeId: string;
-  templateId: string;
+  draft: Draft;
+  viewMode: "grid" | "list";
+  dateLabel: string;
+  onRename: (draft: Draft) => void;
+  onDuplicate: (draft: Draft) => void;
+  onDownloadText: (draft: Draft) => void;
   onDelete: (resumeId: string) => void;
 };
 
 export default function ResumeCard({
-  name,
-  updatedAt,
-  resumeId,
-  templateId,
+  draft,
+  viewMode,
+  dateLabel,
+  onRename,
+  onDuplicate,
+  onDownloadText,
   onDelete,
 }: ResumeCardProps) {
+  const fullName = [
+    draft.data.firstName,
+    draft.data.lastName,
+  ].filter(Boolean).join(" ") || "Your name";
+
+  const isList = viewMode === "list";
+
   return (
-    <div className="group relative">
-      <button
-        type="button"
-        onClick={() => {
-          window.location.href = `/resume/${resumeId}`;
-        }}
-        className="w-full text-left"
+    <article
+      className={`relative rounded-xl border border-gray-200 bg-white ${
+        isList ? "flex items-center gap-4 p-3" : "overflow-visible"
+      }`}
+    >
+      <Link
+        href={`/resume/${draft.id}`}
+        className={isList ? "min-w-0 flex-1" : "block"}
       >
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
-          <div className="relative flex aspect-[8.5/5] items-center justify-center overflow-hidden bg-gray-100">
-            {templateId === "blank" ? (
-              <div className="flex h-full w-full items-center justify-center bg-gray-50">
-                <span className="text-4xl font-light text-gray-300">
-                  Resume
-                </span>
-              </div>
-            ) : (
-              <Image
-                src={`/templates/${templateId}.png`}
-                alt={`${name} thumbnail`}
-                fill
-                sizes="320px"
-                className="object-cover object-top"
-                onError={(event) => {
-                  event.currentTarget.style.display = "none";
-                }}
-              />
-            )}
+        {!isList && (
+          <div className="h-48 overflow-hidden rounded-t-xl bg-gray-50 p-5">
+            <div className="mx-auto h-full max-w-sm overflow-hidden border border-gray-200 bg-white p-4 shadow-sm">
+              <h3 className="truncate text-lg font-bold text-gray-800">
+                {fullName}
+              </h3>
+              <p className="truncate text-xs text-gray-500">
+                {draft.data.email}
+              </p>
+              {draft.data.summary && (
+                <p className="mt-3 line-clamp-3 text-xs text-gray-600">
+                  {draft.data.summary}
+                </p>
+              )}
+              {draft.data.experience.slice(0, 2).map((item, index) => (
+                <div key={`${item.company}-${index}`} className="mt-3">
+                  <p className="truncate text-xs font-semibold text-gray-700">
+                    {item.title || item.company}
+                  </p>
+                  <p className="truncate text-xs text-gray-500">
+                    {item.company}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
+        )}
 
-          <div className="p-4 pr-12">
-            <h3 className="truncate text-base font-semibold text-gray-900">
-              {name}
-            </h3>
-
-            <p className="mt-1 text-sm text-gray-500">
-              Edited {updatedAt}
-            </p>
-          </div>
+        <div className={isList ? "min-w-0" : "p-4"}>
+          <h3 className="truncate font-semibold text-gray-900">
+            {draft.title}
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            {dateLabel}
+          </p>
         </div>
-      </button>
+      </Link>
 
-      <button
-        type="button"
-        aria-label={`Delete ${name}`}
-        title="Delete resume"
-        onClick={() => onDelete(resumeId)}
-        className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-xl text-gray-600 shadow-sm hover:bg-gray-100"
-      >
-        ⋮
-      </button>
-    </div>
+      <div className={isList ? "shrink-0" : "absolute right-2 top-2"}>
+        <ResumeMenu
+          onOpen={() => { window.location.href = `/resume/${draft.id}`; }}
+          onRename={() => onRename(draft)}
+          onDuplicate={() => onDuplicate(draft)}
+          onDownloadPdf={() => {
+            window.location.href = `/resume/${draft.id}?download=pdf`;
+          }}
+          onDownloadText={() => onDownloadText(draft)}
+          onDelete={() => onDelete(draft.id)}
+        />
+      </div>
+    </article>
   );
 }
