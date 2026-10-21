@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import type { ResumeData } from "@/lib/types/resume";
 import { db } from "@/lib/firebase";
+import { normalizeDetails } from "@/lib/resumeDetails";
 
 export type Draft = {
   id: string;
@@ -52,7 +53,7 @@ function toResumeData(value: unknown): ResumeData {
     throw new TypeError("Draft data must be an object.");
   }
 
-  return value as ResumeData;
+  return normalizeDetails(value);
 }
 
 function toDraft(id: string, value: Record<string, unknown>): Draft {
