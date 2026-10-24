@@ -1,5 +1,9 @@
 import { SKILLS, type SkillTerm } from "./skillsDictionary";
 
+const SENTENCE_END = /(?<!\b(?:e\.g|i\.e|etc|vs|Sr|Jr|U\.S)\.)(?<=[.!?])\s+/i;
+const BULLET = /^[-•*]\s*/;
+
+
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
 }
@@ -34,6 +38,14 @@ export function normalize(text: string): string {
     .replace(/[\u2013\u2014]/g, "-")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+export function splitSentences(text: string): string[] {
+  const lines = text.split(/\r?\n/);
+  const cleaned = lines.map((line) => normalize(line).replace(BULLET, ""));
+  const nonEmpty = cleaned.filter((line) => line.length > 0);
+  const sentences = nonEmpty.flatMap((line => line.split(SENTENCE_END)));
+  return sentences;
 }
 
 export type KeywordComparison = {
@@ -79,7 +91,7 @@ export function findEvidence(skillName: string, text: string): Evidence {
 
   let section: "required" | "preferred" | null = null;
   for (const raw of text.split(/\r?\n/)) {
-    const line = normalize(raw).replace(/^[-•*]\s*/, "");
+    const line = normalize(raw).replace(BULLET, "");
     if (!line) continue;
 
     if (line.length < 60 && line.endsWith(":")) {
