@@ -193,7 +193,7 @@ A keyword scan was already done in code. Trust it:
 
 Return ONLY valid JSON, with no prose and no markdown code fences, in exactly this shape:
 {
-  "skillGaps": [{ "skill": string, "importance": "required" | "preferred", "note": string, "jobDescriptionEvidence": string }],
+  "skillGaps": [{ "skill": string, "note": string, "jobDescriptionEvidence": string }],
   "suggestedRewordings": [{ "original": string, "suggested": string, "reason": string }],
   "strengths": [{ "point": string, "evidence": string }],
   "categoryScores": { "skills": number, "experience": number, "education": number },
@@ -204,8 +204,6 @@ Return ONLY valid JSON, with no prose and no markdown code fences, in exactly th
 
 skillGaps: one item for each skill in the LACKS list.
 - "skill" uses the exact name from the LACKS list.
-- "importance" is "required" only if the job description lists it under a
-  required, minimum, or must-have section. Otherwise "preferred".
 - "note" is exactly two sentences: why this job needs the skill, then one
   concrete way the candidate could close the gap.
 - "jobDescriptionEvidence" is a short phrase (3 to 12 words) copied exactly,
@@ -340,7 +338,7 @@ export async function POST(req: Request) {
           : "";
       return {
         skill: req.label,
-        importance: evidence.section ?? fromModel?.importance ?? "preferred",
+        importance: evidence.section ?? "preferred",
         note:
           fromModel?.note ||
           `This posting asks for ${req.label}, and it does not appear in your resume. If you have used it, add it with a specific example; if not, a small project using it would close this gap.`,
