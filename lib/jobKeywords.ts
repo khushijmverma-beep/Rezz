@@ -2,6 +2,9 @@ import { SKILLS, type SkillTerm } from "./skillsDictionary";
 
 const SENTENCE_END = /(?<!\b(?:e\.g|i\.e|etc|vs|Sr|Jr|U\.S)\.)(?<=[.!?])\s+/i;
 const BULLET = /^[-•*]\s*/;
+const REQUIRED_HEADER = /required|requirements|minimum|must|basic/i;
+const PREFERRED_HEADER = /preferred|nice to have|bonus|plus/i;
+const NEUTRAL_HEADER = /^(about|responsibilities|what you'?ll do|who you are|benefits|perks|the role|the team)/i;
 
 
 function escapeRegex(s: string): string {
@@ -44,7 +47,7 @@ export function splitSentences(text: string): string[] {
   const lines = text.split(/\r?\n/);
   const cleaned = lines.map((line) => normalize(line).replace(BULLET, ""));
   const nonEmpty = cleaned.filter((line) => line.length > 0);
-  const sentences = nonEmpty.flatMap((line => line.split(SENTENCE_END)));
+  const sentences = nonEmpty.flatMap(line => line.split(SENTENCE_END));
   return sentences;
 }
 
@@ -180,9 +183,6 @@ export type Evidence = {
   section: "required" | "preferred" | null;
 };
 
-const REQUIRED_HEADER = /required|requirements|minimum|must|basic/i;
-const PREFERRED_HEADER = /preferred|nice to have|bonus|plus/i;
-
 
 function headerSection(line: string): Evidence["section"] | undefined {
   if (line.length >= 60 || findSpans(line).length > 0) return undefined;
@@ -194,6 +194,7 @@ function headerSection(line: string): Evidence["section"] | undefined {
   if (/[.!?]$/.test(line)) return undefined;
   if (preferred) return "preferred";
   if (required) return "required";
+  if (NEUTRAL_HEADER.test(line)) return null;  
   return undefined;
 }
 
