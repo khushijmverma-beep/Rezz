@@ -1,4 +1,10 @@
-import { compareKeywords, findEvidence, normalize } from "@/lib/jobKeywords";
+import {
+  compareKeywords,
+  findEvidence,
+  findSkills,
+  hasSkill,
+  normalize,
+} from "@/lib/jobKeywords";
 import type {
   JobMatchRequest,
   JobMatchResult,
@@ -142,7 +148,7 @@ const titlesIn = (s: string): string[] =>
   (s.match(TITLE_WORDS) ?? []).map((w) => w.toLowerCase());
 
 function addsNothingNew(original: string, suggested: string): boolean {
-  if (compareKeywords(original, suggested).missing.length > 0) return false;
+  if (findSkills(suggested).some((s) => !hasSkill(original, s))) return false;
   const origNums = numbersIn(original);
   const sugNums = numbersIn(suggested);
   if (sugNums.some((n) => !origNums.includes(n))) return false;
@@ -153,7 +159,7 @@ function addsNothingNew(original: string, suggested: string): boolean {
 }
 
 function claimsMissingSkill(item: string, missing: string[]): boolean {
-  const mentioned = compareKeywords("", item).missing;
+  const mentioned = findSkills(item);
   if (!mentioned.some((skill) => missing.includes(skill))) return false;
   const tellsToAdd =
     /\b(add|include|list|mention|put|write)\b.*\b(resume|cv|skills section|experience section)\b/i.test(
@@ -322,20 +328,22 @@ export async function POST(req: Request) {
   const modelGaps = new Map(
     parsed.skillGaps.map((g) => [g.skill.toLowerCase(), g]),
   );
-  const skillGaps: SkillGap[] = keywords.missing
-    .map((skill): SkillGap => {
-      const fromModel = modelGaps.get(skill.toLowerCase());
-      const evidence = findEvidence(skill, jd);
+  const unmet = keywords.requirements.filter((r) => !r.met);
+
+  const skillGaps: SkillGap[] = unmet
+    .map((req): SkillGap => {
+      const fromModel = modelGaps.get(req.label.toLowerCase());
+      const evidence = findEvidence(req.skills, jd);
       const modelQuote =
         fromModel && contains(jd, fromModel.jobDescriptionEvidence)
           ? fromModel.jobDescriptionEvidence
           : "";
       return {
-        skill,
+        skill: req.label,
         importance: evidence.section ?? fromModel?.importance ?? "preferred",
         note:
           fromModel?.note ||
-          `This posting asks for ${skill}, and it does not appear in your resume. If you have used it, add it with a specific example; if not, a small project using ${skill} would close this gap.`,
+          `This posting asks for ${req.label}, and it does not appear in your resume. If you have used it, add it with a specific example; if not, a small project using it would close this gap.`,
         jobDescriptionEvidence: evidence.phrase || modelQuote,
       };
     })
@@ -353,6 +361,7 @@ export async function POST(req: Request) {
       return (
         contains(resume, original) &&
         lower(r.suggested) !== key &&
+        !lower(r.suggested).startsWith(key) &&
         addsNothingNew(original, r.suggested)
       );
     })
@@ -362,12 +371,13 @@ export async function POST(req: Request) {
     .filter((s) => contains(resume, s.evidence))
     .slice(0, 5);
 
-  const total = keywords.matched.length + keywords.missing.length;
-  const keywordScore =
-    total === 0 ? 100 : Math.round((keywords.matched.length / total) * 100);
+  const total = keywords.requirements.length;
+  const metCount = total - unmet.length;
+  const keywordScore = total === 0 ? 100 : Math.round((metCount / total) * 100);
 
+  const missingSkills = unmet.flatMap((r) => r.skills);
   const honestActions = parsed.actionItems.filter(
-    (item) => !claimsMissingSkill(item, keywords.missing),
+    (item) => !claimsMissingSkill(item, missingSkills),
   );
   const actionItems =
     honestActions.length > 0
@@ -390,10 +400,7 @@ export async function POST(req: Request) {
   }
   if (suggestedRewordings.length === 0) {
     emptyReasons.suggestedRewordings =
-      parsed.suggestedRewordings.length > 0
-        ? "Suggested rewordings were removed because they added details that are not in your resume."
-        : parsed.emptyReasons.suggestedRewordings ||
-          "Your resume lines already fit this posting well, so no rewordings were needed.";
+      "No safe rewordings found for this job description.";
   }
 
   const matchScore = parsed.overallFit.matchScore || keywordScore;
@@ -410,9 +417,19 @@ export async function POST(req: Request) {
       rating: toRating(matchScore),
       summary:
         parsed.overallFit.summary ||
-        `Your resume matches ${keywords.matched.length} of ${total} skills this posting lists.`,
+        `Your resume matches ${metCount} of ${total} requirements this posting lists.`,
     },
     emptyReasons,
+    scorerVersion: "",
+    topFixes: [],
+    ats: {
+      score: 0,
+      checks: [],
+    },
+    human: {
+      score: 0,
+      checks: [],
+    },
   };
 
   return Response.json(result);
