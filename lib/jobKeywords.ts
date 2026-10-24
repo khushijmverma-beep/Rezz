@@ -175,31 +175,58 @@ export function hasSkill(text: string, skill: string): boolean {
 }
 
 
-export type Evidence = { phrase: string; section: "required" | "preferred" | null };
+export type Evidence = {
+  phrase: string;
+  section: "required" | "preferred" | null;
+};
 
-export function findEvidence(skillName: string, text: string): Evidence {
-  const result: Evidence = { phrase: "", section: null };
-  const entry = COMPILED.find((c) => c.name === skillName);
-  if (!entry) return result;
+const REQUIRED_HEADER = /required|requirements|minimum|must|basic/i;
+const PREFERRED_HEADER = /preferred|nice to have|bonus|plus/i;
 
-  let section: "required" | "preferred" | null = null;
+
+function headerSection(line: string): Evidence["section"] | undefined {
+  if (line.length >= 60 || findSpans(line).length > 0) return undefined;
+  const preferred = PREFERRED_HEADER.test(line);
+  const required = REQUIRED_HEADER.test(line);
+  if (line.endsWith(":")) {
+    return preferred ? "preferred" : required ? "required" : null;
+  }
+  if (/[.!?]$/.test(line)) return undefined;
+  if (preferred) return "preferred";
+  if (required) return "required";
+  return undefined;
+}
+
+
+export function findEvidence(skills: string[], text: string): Evidence {
+  const regexes = skills
+    .map((s) => BY_NAME.get(s)?.regex)
+    .filter((r): r is RegExp => r !== undefined);
+  if (regexes.length === 0) return { phrase: "", section: null };
+
+  let section: Evidence["section"] = null;
+  let best: { phrase: string; section: Evidence["section"]; hits: number } | null = null;
+
   for (const raw of text.split(/\r?\n/)) {
     const line = normalize(raw).replace(BULLET, "");
     if (!line) continue;
 
-    if (line.length < 60 && line.endsWith(":")) {
-      if (/required|minimum|must|basic/i.test(line)) section = "required";
-      else if (/preferred|nice to have|bonus|plus/i.test(line)) section = "preferred";
-      else section = null;
+    const header = headerSection(line);
+    if (header !== undefined) {
+      section = header;
       continue;
     }
 
-    if (!entry.regex.test(line)) continue;
-    if (!result.phrase) result.phrase = line;
-    if (section) {
-      result.section = section;
-      break;
+    for (const sentence of splitSentences(line)) {
+      const hits = regexes.filter((r) => r.test(sentence)).length;
+      if (hits === 0) continue;
+      const better =
+        !best ||
+        hits > best.hits ||
+        (hits === best.hits && sentence.length < best.phrase.length);
+      if (better) best = { phrase: sentence, section, hits };
     }
   }
-  return result;
+
+  return best ? { phrase: best.phrase, section: best.section } : { phrase: "", section: null };
 }
