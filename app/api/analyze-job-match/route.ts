@@ -14,7 +14,7 @@ import type {
 import { callLLM, hasConfiguredAIProvider } from "@/lib/llm";
 import { GeminiError } from "@/lib/gemini";
 import type { ResumeData } from "@/lib/types/resume";
-import { resumeText as resumeToText } from "@/lib/scoring/ats";
+import { bullets, resumeText as resumeToText } from "@/lib/scoring/ats";
 import { scoreResume } from "@/lib/scoring";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -240,6 +240,7 @@ suggestedRewordings: up to 5 resume lines that could better match this job.
   technology, tool, number, job title, or company that is not in the original
   line. Never remove numbers.
 - "reason" names the job requirement the change targets.
+- Only reword experience bullets or project descriptions, never names, job titles, or headings.
 
 strengths: up to 5 things the resume already does well for this job.
 - "point" is one sentence.
@@ -376,6 +377,14 @@ export async function POST(req: Request) {
       a.importance === b.importance ? 0 : a.importance === "required" ? -1 : 1,
     );
 
+  const rewordable = body.data
+    ? new Set(
+        [...bullets(body.data), ...body.data.projects.map((p) => p.description)]
+          .map(lower)
+          .filter(Boolean),
+      )
+    : null;
+
   const seen = new Set<string>();
   const suggestedRewordings = parsed.suggestedRewordings
     .filter((r) => {
@@ -387,7 +396,8 @@ export async function POST(req: Request) {
         contains(resume, original) &&
         lower(r.suggested) !== key &&
         !lower(r.suggested).startsWith(key) &&
-        addsNothingNew(original, r.suggested)
+        addsNothingNew(original, r.suggested) &&
+        (rewordable === null || rewordable.has(key))
       );
     })
     .slice(0, 5);

@@ -33,7 +33,7 @@ const FIX_TEXT: Record<string, string> = {
 
 function topFixesFrom(checks: { check: ScoreCheck; view: string }[]): TopFix[] {
   return checks
-    .filter(({ check }) => check.status !== "pass")
+    .filter(({ check }) => check.status !== "pass" && check.id !== "ai")
     .map(({ check, view }) => ({
       gain: check.maxPoints - check.points,
       text: `${FIX_TEXT[check.id] ?? check.label}: about +${check.maxPoints - check.points} ${view} points`,
