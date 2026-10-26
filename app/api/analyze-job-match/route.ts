@@ -196,7 +196,7 @@ function claimsMissingSkill(item: string, missing: string[]): boolean {
   const mentioned = findSkills(item);
   if (!mentioned.some((skill) => missing.includes(skill))) return false;
   const tellsToAdd =
-    /\b(add|include|list|mention|put|write|describe)\b[^.]*\b(line|bullet|resume|cv|section|experience)\b/i.test(
+    /\b(add|includ|list|mention|put|writ|describ|stat|nam)\w*\b[^.]*\b(line|bullet|resume|cv|section|experience|description|endpoint)\w*\b/i.test(
       item,
     );
   const conditional = /\b(once|after|when|if)\b/i.test(item);

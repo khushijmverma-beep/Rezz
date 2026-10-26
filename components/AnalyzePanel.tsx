@@ -6,11 +6,20 @@ import type { ResumeData } from "@/lib/types/resume";
 import styles from "./AnalyzePanel.module.css";
 import ReportExpanded from "./ReportExpanded";
 
+export type UserRating = "too_high" | "about_right" | "too_low";
+
+const RATING_OPTIONS: { value: UserRating; label: string }[] = [
+  { value: "too_high", label: "Too high" },
+  { value: "about_right", label: "About right" },
+  { value: "too_low", label: "Too low" },
+];
+
 type AnalyzePanelProps = {
   resumeText?: string; // old way, kept until Juan passes data
   data?: ResumeData;
   templateId?: string;
-  onResult?: (result: JobMatchResult) => void;
+  onResult?: (result: JobMatchResult, jobDescription: string) => void;
+  onFeedback?: (rating: UserRating, note: string) => Promise<void>;
 };
 
 const CATEGORY_LABELS: { key: keyof JobMatchResult["categoryScores"]; label: string }[] = [
@@ -86,7 +95,71 @@ function ScoreView({ title, section }: { title: string; section: ScoreSection })
   );
 }
 
-export default function AnalyzePanel({ resumeText, data, templateId, onResult }: AnalyzePanelProps) {
+function FeedbackBox({ onSubmit }: { onSubmit: (rating: UserRating, note: string) => Promise<void> }) {
+  const [rating, setRating] = useState<UserRating | null>(null);
+  const [note, setNote] = useState("");
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  async function save() {
+    if (!rating) return;
+    setStatus("saving");
+    try {
+      await onSubmit(rating, note);
+      setStatus("saved");
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  if (status === "saved") {
+    return <p className={styles.emptyNote}>Thanks, your feedback was saved.</p>;
+  }
+
+  return (
+    <section className={styles.resultSection} aria-label="Score feedback">
+      <h3 className={styles.sectionHeading}>Was this fair?</h3>
+      <div className={styles.ratingRow} role="group" aria-label="Rate these scores">
+        {RATING_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={rating === option.value}
+            className={`${styles.ratingButton} ${rating === option.value ? styles.ratingActive : ""}`}
+            onClick={() => setRating(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      <textarea
+        className={styles.feedbackNote}
+        placeholder="Optional: what felt off?"
+        value={note}
+        maxLength={500}
+        onChange={(event) => setNote(event.target.value)}
+      />
+      <button
+        type="button"
+        className={styles.analyzeButton}
+        disabled={!rating || status === "saving"}
+        onClick={() => void save()}
+      >
+        {status === "saving" ? "Saving..." : "Send feedback"}
+      </button>
+      {status === "error" && (
+        <p className={styles.errorMessage}>Couldn't save your feedback. Please try again.</p>
+      )}
+    </section>
+  );
+}
+
+export default function AnalyzePanel({
+  resumeText,
+  data,
+  templateId,
+  onResult,
+  onFeedback,
+}: AnalyzePanelProps) {
   const [jobDescription, setJobDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,9 +193,9 @@ export default function AnalyzePanel({ resumeText, data, templateId, onResult }:
 
         const message =
           typeof body === "object" &&
-            body !== null &&
-            "error" in body &&
-            typeof (body as { error: unknown }).error === "string"
+          body !== null &&
+          "error" in body &&
+          typeof (body as { error: unknown }).error === "string"
             ? (body as { error: string }).error
             : "Analysis failed";
         setError(message);
@@ -132,7 +205,7 @@ export default function AnalyzePanel({ resumeText, data, templateId, onResult }:
       const matchResult = body as JobMatchResult;
       setResult(matchResult);
       try {
-        onResult?.(matchResult);
+        onResult?.(matchResult, jobDescription);
       } catch (err) {
         console.error("onResult callback failed", err);
       }
@@ -199,8 +272,9 @@ export default function AnalyzePanel({ resumeText, data, templateId, onResult }:
         <p className={styles.detailTitle}>
           {gap.skill}{" "}
           <span
-            className={`${styles.importanceBadge} ${gap.importance === "required" ? styles.required : styles.preferred
-              }`}
+            className={`${styles.importanceBadge} ${
+              gap.importance === "required" ? styles.required : styles.preferred
+            }`}
           >
             {gap.importance}
           </span>
@@ -227,6 +301,7 @@ export default function AnalyzePanel({ resumeText, data, templateId, onResult }:
               <>
                 <ScoreView title="ATS score" section={result.ats} />
                 <ScoreView title="Recruiter score" section={result.human} />
+                {onFeedback && <FeedbackBox onSubmit={onFeedback} />}
                 {topFixes.length > 0 && (
                   <section className={styles.resultSection}>
                     <h3 className={styles.sectionHeading}>Top fixes</h3>

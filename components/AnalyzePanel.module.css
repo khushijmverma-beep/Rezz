@@ -627,3 +627,39 @@
   padding-left: 16px;
   padding-right: 16px;
 }
+
+.ratingRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ratingButton {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid rgba(127, 127, 127, 0.35);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ratingActive {
+  border-color: currentColor;
+  font-weight: 700;
+}
+
+.feedbackNote {
+  width: 100%;
+  min-height: 60px;
+  margin-bottom: 8px;
+  padding: 8px;
+  border: 1px solid rgba(127, 127, 127, 0.35);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+}
