@@ -1,0 +1,44 @@
+
+{
+  "id": "sample-001",
+  "resumeText": "Alex Smith\nalex@example.com\nSoftware Developer\nSkills: JavaScript, TypeScript, React, Git\nExperience: Developed web applications using React.",
+  "jobDescription": "Software Developer\nRequired: JavaScript, TypeScript, React, and Git. Experience building web applications.",
+  "templateId": "simple",
+  "humanAtsScore": 4,
+  "humanRecruiterScore": 3,
+  "notes": "Sample resume with relevant software development skills.",
+  "resumeData": {
+    "firstName": "Alex",
+    "lastName": "Smith",
+    "email": "alex@example.com",
+    "phone": "",
+    "location": "",
+    "linkedin": "",
+    "github": "",
+    "website": "",
+    "summary": "Software Developer",
+    "experience": [
+      {
+        "company": "Example Company",
+        "title": "Software Developer",
+        "location": "",
+        "startDate": "2024",
+        "endDate": "2025",
+        "bullets": [
+          "Developed web applications using React."
+        ]
+      }
+    ],
+    "education": [],
+    "skills": [
+      "JavaScript",
+      "TypeScript",
+      "React",
+      "Git"
+    ],
+    "projects": [],
+    "awards": [],
+    "certifications": [],
+    "languages": []
+  }
+}

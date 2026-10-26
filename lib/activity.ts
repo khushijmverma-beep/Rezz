@@ -1,23 +1,20 @@
 
+
 import { db } from "@/lib/firebase";
 import {
-  doc,
   collection,
-  setDoc,
+  doc,
   addDoc,
+  setDoc,
+  updateDoc,
   getDocs,
   query,
-  where,
   orderBy,
-  limit,
+  where,
   increment,
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
-
-// ========================================
-// TYPES
-// ========================================
 
 export type ActivityType =
   | "edit"
@@ -33,202 +30,227 @@ export type ActivityDay = {
   creates: number;
 };
 
+export type UserRating =
+  | "too_high"
+  | "about_right"
+  | "too_low";
+
 export type SavedAnalysis = {
   id: string;
   draftId: string;
   draftTitle: string;
+  resumeId: string;
   matchScore: number;
   rating: string;
   createdAt: number;
+  atsScore?: number;
+  humanScore?: number;
+  templateId?: string;
+  scorerVersion?: string;
+  jobTitle?: string;
+  userRating?: UserRating;
+  userNote?: string;
 };
 
-// Track the last edit logged for each user
-const lastEditLog = new Map<string, number>();
+export type SaveAnalysisInput = {
+  draftId: string;
+  draftTitle: string;
+  matchScore: number;
+  rating: string;
+  resumeId?: string;
+  atsScore?: number;
+  humanScore?: number;
+  templateId?: string;
+  scorerVersion?: string;
+  jobTitle?: string;
+  jobDescription?: string;
+};
 
-// Get a date in YYYY-MM-DD using local time
-function getLocalDate(date: Date): string {
+const lastEdits = new Map<string, number>();
+
+export function localDateKey(date = new Date()): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-
   return `${year}-${month}-${day}`;
 }
 
-// ========================================
-// 1. LOG ACTIVITY
-// ========================================
+export function activityTotal(day: ActivityDay): number {
+  return day.edits + day.exports + day.analyses + day.creates;
+}
 
 export async function logActivity(
   uid: string,
   type: ActivityType
 ): Promise<void> {
-  try {
-    const now = Date.now();
+  const date = localDateKey();
+  const key = `${uid}:${date}`;
+  const now = Date.now();
 
-    // Only log edits once per minute per user
-    if (type === "edit") {
-      const lastLog = lastEditLog.get(uid) ?? 0;
+  if (type === "edit") {
+    const last = lastEdits.get(key);
 
-      if (now - lastLog < 60000) {
-        return;
-      }
-
-      lastEditLog.set(uid, now);
+    if (last !== undefined && now - last < 60_000) {
+      return;
     }
 
-    const today = getLocalDate(new Date());
+    lastEdits.set(key, now);
+  }
 
-    // Match activity types to Firestore fields
-    const fields = {
+  try {
+    const fields: Record<ActivityType, string> = {
       edit: "edits",
       export: "exports",
       analysis: "analyses",
       create: "creates",
-    } as const;
-
-    const activityRef = doc(
-      db,
-      "users",
-      uid,
-      "activityDays",
-      today
-    );
+    };
 
     await setDoc(
-      activityRef,
+      doc(db, "users", uid, "activityDays", date),
       {
-        date: today,
+        date,
         [fields[type]]: increment(1),
       },
       { merge: true }
     );
   } catch (error) {
     if (type === "edit") {
-      lastEditLog.delete(uid);
+      lastEdits.delete(key);
     }
 
-    console.error("Failed to log activity:", error);
+    console.error("Activity logging failed:", error);
   }
 }
-
-// ========================================
-// 2. SAVE AI ANALYSIS
-// ========================================
 
 export async function saveAnalysis(
   uid: string,
-  data: {
-    draftId: string;
-    draftTitle: string;
-    matchScore: number;
-    rating: string;
-  }
-): Promise<void> {
-  try {
-    const analysesRef = collection(
-      db,
-      "users",
-      uid,
-      "analyses"
-    );
+  data: SaveAnalysisInput
+): Promise<string> {
+  const title =
+    data.jobTitle?.trim() ||
+    data.jobDescription?.split(/\r?\n/).find(
+      (line) => line.trim().length > 0
+    )?.trim().slice(0, 120) ||
+    "";
 
-    await addDoc(analysesRef, {
-      draftId: data.draftId,
-      draftTitle: data.draftTitle,
-      matchScore: data.matchScore,
-      rating: data.rating,
-      createdAt: serverTimestamp(),
-    });
-  } catch (error) {
-    console.error("Failed to save analysis:", error);
-  }
+  const record = {
+    draftId: data.draftId,
+    draftTitle: data.draftTitle,
+    resumeId: data.resumeId || data.draftId,
+    matchScore: data.matchScore,
+    rating: data.rating,
+    createdAt: serverTimestamp(),
+    ...(data.atsScore !== undefined && {
+      atsScore: data.atsScore,
+    }),
+    ...(data.humanScore !== undefined && {
+      humanScore: data.humanScore,
+    }),
+    ...(data.templateId && {
+      templateId: data.templateId,
+    }),
+    ...(data.scorerVersion && {
+      scorerVersion: data.scorerVersion,
+    }),
+    ...(title && { jobTitle: title }),
+  };
+
+  const ref = await addDoc(
+    collection(db, "users", uid, "analyses"),
+    record
+  );
+
+  // Avoid logging this same analysis again in the editor.
+  await logActivity(uid, "analysis");
+
+  return ref.id;
 }
 
-// ========================================
-// 3. GET ACTIVITY DAYS
-// ========================================
+export async function updateAnalysisFeedback(
+  uid: string,
+  analysisId: string,
+  userRating: UserRating,
+  userNote = ""
+): Promise<void> {
+  await updateDoc(
+    doc(db, "users", uid, "analyses", analysisId),
+    {
+      userRating,
+      userNote: userNote.trim(),
+    }
+  );
+}
 
 export async function getActivityDays(
   uid: string
 ): Promise<ActivityDay[]> {
   const today = new Date();
+  const first = new Date(today);
+  first.setDate(today.getDate() - 364);
 
-  // Start 364 days before today: 365 days total
-  const startDate = new Date(today);
-  startDate.setDate(today.getDate() - 364);
-
-  const start = getLocalDate(startDate);
-  const end = getLocalDate(today);
-
-  const activityRef = collection(
-    db,
-    "users",
-    uid,
-    "activityDays"
+  const result = await getDocs(
+    query(
+      collection(db, "users", uid, "activityDays"),
+      where("date", ">=", localDateKey(first)),
+      where("date", "<=", localDateKey(today)),
+      orderBy("date", "asc")
+    )
   );
 
-  const activityQuery = query(
-    activityRef,
-    where("date", ">=", start),
-    where("date", "<=", end),
-    orderBy("date", "asc")
-  );
-
-  const snapshot = await getDocs(activityQuery);
-
-  return snapshot.docs.map((document) => {
-    const data = document.data();
+  return result.docs.map((snapshot) => {
+    const value = snapshot.data();
 
     return {
-      date: data.date ?? document.id,
-      edits: data.edits ?? 0,
-      exports: data.exports ?? 0,
-      analyses: data.analyses ?? 0,
-      creates: data.creates ?? 0,
+      date: value.date ?? snapshot.id,
+      edits: value.edits ?? 0,
+      exports: value.exports ?? 0,
+      analyses: value.analyses ?? 0,
+      creates: value.creates ?? 0,
     };
   });
 }
 
-// ========================================
-// 4. GET AI ANALYSES
-// ========================================
-
 export async function getAnalyses(
   uid: string
 ): Promise<SavedAnalysis[]> {
-  const analysesRef = collection(
-    db,
-    "users",
-    uid,
-    "analyses"
+  // No 50-scan limit: CSV export needs complete history.
+  const result = await getDocs(
+    query(
+      collection(db, "users", uid, "analyses"),
+      orderBy("createdAt", "asc")
+    )
   );
 
-  const analysesQuery = query(
-    analysesRef,
-    orderBy("createdAt", "desc"),
-    limit(50)
-  );
+  return result.docs.map((snapshot) => {
+    const value = snapshot.data();
 
-  const snapshot = await getDocs(analysesQuery);
+    const optionalScore = (
+      score: unknown
+    ): number | undefined =>
+      typeof score === "number" && Number.isFinite(score)
+        ? score
+        : undefined;
 
-  const analyses: SavedAnalysis[] = snapshot.docs.map(
-    (document) => {
-      const data = document.data();
-
-      return {
-        id: document.id,
-        draftId: data.draftId ?? "",
-        draftTitle: data.draftTitle ?? "",
-        matchScore: data.matchScore ?? 0,
-        rating: data.rating ?? "",
-        createdAt:
-          data.createdAt instanceof Timestamp
-            ? data.createdAt.toMillis()
+    return {
+      id: snapshot.id,
+      draftId: value.draftId ?? value.resumeId ?? "",
+      draftTitle: value.draftTitle ?? "",
+      resumeId: value.resumeId ?? value.draftId ?? "",
+      matchScore: value.matchScore ?? 0,
+      rating: value.rating ?? "",
+      createdAt:
+        value.createdAt instanceof Timestamp
+          ? value.createdAt.toMillis()
+          : typeof value.createdAt === "number"
+            ? value.createdAt
             : 0,
-      };
-    }
-  );
-
-  // Return oldest first for the line chart
-  return analyses.reverse();
+      atsScore: optionalScore(value.atsScore),
+      humanScore: optionalScore(value.humanScore),
+      templateId: value.templateId,
+      scorerVersion: value.scorerVersion,
+      jobTitle: value.jobTitle,
+      userRating: value.userRating,
+      userNote: value.userNote,
+    };
+  });
 }

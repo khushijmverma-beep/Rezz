@@ -5,203 +5,195 @@ type Props = {
   analyses: SavedAnalysis[];
 };
 
-export default function ScoreChart({ analyses }: Props) {
-  // Show a message when there are no saved analyses
-  if (analyses.length === 0) {
-    return (
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="text-lg font-semibold text-gray-900">
-          AI Match Scores
-        </h2>
-        <p className="mt-3 text-sm text-gray-500">
-          No analyses yet. Analyze a resume to see your scores here.
-        </p>
-      </div>
-    );
-  }
+type ScoreKey = "atsScore" | "humanScore";
 
-  // Chart dimensions
+const series: {
+  key: ScoreKey;
+  label: string;
+  color: string;
+}[] = [
+  { key: "atsScore", label: "ATS Score", color: "#2563eb" },
+  { key: "humanScore", label: "Recruiter Score", color: "#16a34a" },
+];
+
+export default function ScoreChart({ analyses }: Props) {
+  const scans = [...analyses].sort(
+    (a, b) => a.createdAt - b.createdAt
+  );
+
   const width = 800;
   const height = 320;
-
   const left = 55;
-  const right = 25;
+  const right = 30;
   const top = 25;
-  const bottom = 60;
+  const bottom = 55;
 
-  const chartWidth = width - left - right;
-  const chartHeight = height - top - bottom;
+  const graphWidth = width - left - right;
+  const graphHeight = height - top - bottom;
 
-  // Convert scores to vertical positions
-  function getY(score: number): number {
-    const safeScore = Number.isFinite(score)
-      ? Math.max(0, Math.min(100, score))
-      : 0;
+  const x = (index: number) =>
+    scans.length === 1
+      ? left + graphWidth / 2
+      : left + (index / Math.max(1, scans.length - 1)) * graphWidth;
 
-    return top + ((100 - safeScore) / 100) * chartHeight;
-  }
+  const y = (score: number) =>
+    top +
+    ((100 - Math.max(0, Math.min(100, score))) / 100) *
+      graphHeight;
 
-  // Convert analysis order to horizontal positions
-  function getX(index: number): number {
-    if (analyses.length === 1) {
-      return left + chartWidth / 2;
-    }
+  const hasScores = scans.some(
+    (scan) =>
+      scan.atsScore !== undefined ||
+      scan.humanScore !== undefined
+  );
 
-    return left + (index / (analyses.length - 1)) * chartWidth;
-  }
+  function pathsFor(key: ScoreKey): string[] {
+    const paths: string[] = [];
+    let current: string[] = [];
 
-  // Format the date for the horizontal axis
-  function formatDate(timestamp: number): string {
-    if (!timestamp) return "Unknown";
+    scans.forEach((scan, index) => {
+      const score = scan[key];
 
-    return new Date(timestamp).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
+      if (score === undefined) {
+        if (current.length) paths.push(current.join(" "));
+        current = [];
+      } else {
+        current.push(`${x(index)},${y(score)}`);
+      }
     });
-  }
 
-  // Create points for the line
-  const points = analyses
-    .map(
-      (analysis, index) =>
-        `${getX(index)},${getY(analysis.matchScore)}`
-    )
-    .join(" ");
-
-  // Show at most five date labels to avoid crowding
-  const labelIndexes = new Set<number>();
-
-  const labelCount = Math.min(5, analyses.length);
-
-  for (let i = 0; i < labelCount; i++) {
-    const index =
-      labelCount === 1
-        ? 0
-        : Math.round(
-            (i * (analyses.length - 1)) / (labelCount - 1)
-          );
-
-    labelIndexes.add(index);
+    if (current.length) paths.push(current.join(" "));
+    return paths;
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
-      <h2 className="mb-1 text-lg font-semibold text-gray-900">
-        AI Match Scores
+    <section className="rounded-xl border bg-white p-5">
+      <h2 className="text-lg font-semibold text-gray-900">
+        ATS and Recruiter Scores
       </h2>
 
-      <p className="mb-5 text-sm text-gray-500">
-        Track your resume match scores over time
+      <p className="mt-1 text-sm text-gray-500">
+        See how your selected resume improves after each scan.
       </p>
 
-      <div className="overflow-x-auto">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="w-full min-w-[600px]"
-          role="img"
-          aria-label="Line graph of AI resume match scores"
-        >
-          {/* Horizontal gridlines and score labels */}
-          {[0, 25, 50, 75, 100].map((score) => {
-            const y = getY(score);
-
-            return (
-              <g key={score}>
-                <line
-                  x1={left}
-                  y1={y}
-                  x2={width - right}
-                  y2={y}
-                  stroke="#e5e7eb"
-                  strokeWidth="1"
-                />
-
-                <text
-                  x={left - 12}
-                  y={y + 4}
-                  textAnchor="end"
-                  fontSize="12"
-                  fill="#6b7280"
-                >
-                  {score}
-                </text>
-              </g>
-            );
-          })}
-
-          {/* Vertical axis */}
-          <line
-            x1={left}
-            y1={top}
-            x2={left}
-            y2={top + chartHeight}
-            stroke="#9ca3af"
-          />
-
-          {/* Horizontal axis */}
-          <line
-            x1={left}
-            y1={top + chartHeight}
-            x2={width - right}
-            y2={top + chartHeight}
-            stroke="#9ca3af"
-          />
-
-          {/* Connect analysis points */}
-          {analyses.length > 1 && (
-            <polyline
-              points={points}
-              fill="none"
-              stroke="#16a34a"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
-
-          {/* Display dots and hover tooltips */}
-          {analyses.map((analysis, index) => {
-            const x = getX(index);
-            const y = getY(analysis.matchScore);
-
-            return (
-              <g key={analysis.id}>
-                <circle
-                  cx={x}
-                  cy={y}
-                  r="6"
-                  fill="#16a34a"
-                  stroke="white"
-                  strokeWidth="2"
-                >
-                  <title>
-                    {`${analysis.draftTitle}
-Score: ${analysis.matchScore}%
-Date: ${formatDate(analysis.createdAt)}`}
-                  </title>
-                </circle>
-
-                {/* Date labels */}
-                {labelIndexes.has(index) && (
+      {!hasScores ? (
+        <p className="mt-6 text-sm text-gray-500">
+          No ATS or Recruiter scores yet. Run an analysis to
+          start tracking your progress.
+        </p>
+      ) : (
+        <>
+          <div className="mt-5 overflow-x-auto">
+            <svg
+              viewBox={`0 0 ${width} ${height}`}
+              className="min-w-[550px] w-full"
+              role="img"
+              aria-label="ATS and Recruiter scores over time"
+            >
+              {[0, 25, 50, 75, 100].map((score) => (
+                <g key={score}>
+                  <line
+                    x1={left}
+                    x2={width - right}
+                    y1={y(score)}
+                    y2={y(score)}
+                    stroke="#e5e7eb"
+                  />
                   <text
-                    x={x}
-                    y={height - 32}
+                    x={left - 12}
+                    y={y(score) + 4}
+                    textAnchor="end"
+                    fontSize="12"
+                    fill="#6b7280"
+                  >
+                    {score}
+                  </text>
+                </g>
+              ))}
+
+              {series.map((item) => (
+                <g key={item.key}>
+                  {pathsFor(item.key).map((points, index) => (
+                    <polyline
+                      key={index}
+                      points={points}
+                      fill="none"
+                      stroke={item.color}
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  ))}
+
+                  {scans.map((scan, index) => {
+                    const score = scan[item.key];
+                    if (score === undefined) return null;
+
+                    return (
+                      <circle
+                        key={`${scan.id}-${item.key}`}
+                        cx={x(index)}
+                        cy={y(score)}
+                        r="5"
+                        fill={item.color}
+                        stroke="white"
+                        strokeWidth="2"
+                      >
+                        <title>
+                          {`${item.label}: ${score}/100
+${new Date(scan.createdAt).toLocaleDateString()}
+${scan.jobTitle || scan.draftTitle}`}
+                        </title>
+                      </circle>
+                    );
+                  })}
+                </g>
+              ))}
+
+              {scans.map((scan, index) => {
+                if (
+                  scans.length > 6 &&
+                  index % Math.ceil(scans.length / 6) !== 0 &&
+                  index !== scans.length - 1
+                ) {
+                  return null;
+                }
+
+                return (
+                  <text
+                    key={scan.id}
+                    x={x(index)}
+                    y={height - 22}
                     fontSize="11"
                     fill="#6b7280"
                     textAnchor="middle"
                   >
-                    {formatDate(analysis.createdAt)}
+                    {scan.createdAt
+                      ? new Date(scan.createdAt).toLocaleDateString(
+                          "en-US",
+                          { month: "short", day: "numeric" }
+                        )
+                      : "Unknown"}
                   </text>
-                )}
-              </g>
-            );
-          })}
-        </svg>
-      </div>
+                );
+              })}
+            </svg>
+          </div>
 
-      <p className="mt-3 text-xs text-gray-500">
-        Hover over a point to see the resume title and score.
-      </p>
-    </div>
+          <div className="mt-3 flex flex-wrap justify-center gap-5 text-sm">
+            {series.map((item) => (
+              <div key={item.key} className="flex items-center gap-2">
+                <span
+                  className="h-3 w-3 rounded-full"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="text-gray-700">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
   );
 }
+
