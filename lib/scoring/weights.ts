@@ -38,3 +38,12 @@ export const STATUS_THRESHOLDS = {
   pass: 0.9,
   warn: 0.5,
 } as const;
+
+export const HUMAN_LIMITS = {
+  impactTarget: 0.6, // share of bullets with a number for full points
+  bulletMinWords: 12,
+  bulletMaxWords: 25,
+  topBulletsPerJob: 2, // bullets per job checked for relevance
+  summaryMinWords: 15,
+  summaryMaxWords: 60,
+} as const;

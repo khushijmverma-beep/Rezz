@@ -344,7 +344,6 @@ function lengthCheck(data: ResumeData, now: Date): ScoreCheck {
 }
 
 
-
 export function scoreAts({ data, jobDescription, atsFriendly, now = new Date() }: AtsInput): ScoreSection {
   const checks = [
     keywordCheck(data, jobDescription),

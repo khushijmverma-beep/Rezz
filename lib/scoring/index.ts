@@ -1,6 +1,7 @@
 import type { ScoreCheck, ScoreResult, TopFix } from "@/lib/types/job-match";
 import type { ResumeData } from "@/lib/types/resume";
 import { scoreAts } from "./ats";
+import { scoreHuman } from "./human";
 
 export const SCORER_VERSION = "0.1.0";
 
@@ -12,6 +13,7 @@ export type ScoreInput = {
 
 
 const FIX_TEXT: Record<string, string> = {
+
   keywords: "Add the missing job skills to your bullets or projects",
   sections: "Add the missing resume sections",
   template: "Switch to an ATS-friendly template",
@@ -19,6 +21,13 @@ const FIX_TEXT: Record<string, string> = {
   dates: "Use one date format and add every end date",
   title: "Mention the job title in your summary or job titles",
   length: "Trim the resume to fit the page limit",
+
+  actionVerbs: "Start weak bullets with a strong action verb",
+  impact: "Add numbers (counts, %, time saved) to more bullets",
+  bulletLength: "Rewrite bullets to 12 to 25 words",
+  relevance: "Move job-relevant bullets to the top of each role",
+  order: "List experience newest first",
+  summary: "Make your summary specific: skills, focus, a result",
 };
 
 function topFixesFrom(checks: { check: ScoreCheck; view: string }[]): TopFix[] {
@@ -34,23 +43,11 @@ function topFixesFrom(checks: { check: ScoreCheck; view: string }[]): TopFix[] {
 }
 
 export async function scoreResume({ data, jobDescription }: ScoreInput): Promise<ScoreResult> {
-
+  // TODO: read atsFriendly for templateId
   const ats = scoreAts({ data, jobDescription });
 
-
-  const human = {
-    score: 65,
-    checks: [
-      {
-        id: "impact",
-        label: "Impact",
-        status: "fail" as const,
-        reason: "Placeholder: recruiter checks not built yet.",
-        points: 5,
-        maxPoints: 15,
-      },
-    ],
-  };
+  // TODO: pass the AI judgement once the model call is added.
+  const human = scoreHuman({ data, jobDescription });
 
   const topFixes = topFixesFrom([
     ...ats.checks.map((check) => ({ check, view: "ATS" })),
