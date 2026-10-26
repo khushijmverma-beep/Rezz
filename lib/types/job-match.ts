@@ -9,6 +9,7 @@ export type ScoreCheck = {
     reason: string;
     evidence?: string;
     points: number;
+    maxPoints: number;
 }
 
 
