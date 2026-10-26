@@ -26,9 +26,13 @@ function isResumeData(v: unknown): v is ResumeData {
   const strings = ["firstName", "lastName", "email", "phone", "summary"].every(
     (k) => typeof v[k] === "string",
   );
-  const arrays = ["experience", "education", "skills", "projects", "awards"].every(
-    (k) => Array.isArray(v[k]),
-  );
+  const arrays = [
+    "experience",
+    "education",
+    "skills",
+    "projects",
+    "awards",
+  ].every((k) => Array.isArray(v[k]));
   const bulletsOk =
     Array.isArray(v.experience) &&
     v.experience.every((e) => isRecord(e) && Array.isArray(e.bullets));
@@ -38,11 +42,13 @@ function isResumeData(v: unknown): v is ResumeData {
 function isJobMatchRequest(value: unknown): value is JobMatchRequest {
   if (!isRecord(value)) return false;
   const jdOk =
-    typeof value.jobDescription === "string" && value.jobDescription.trim().length > 0;
+    typeof value.jobDescription === "string" &&
+    value.jobDescription.trim().length > 0;
   const hasText =
     typeof value.resumeText === "string" && value.resumeText.trim().length > 0;
   const dataOk = value.data === undefined || isResumeData(value.data);
-  const templateOk = value.templateId === undefined || typeof value.templateId === "string";
+  const templateOk =
+    value.templateId === undefined || typeof value.templateId === "string";
   return jdOk && dataOk && templateOk && (hasText || value.data !== undefined);
 }
 
@@ -153,13 +159,17 @@ function parseModelOutput(text: string): ModelOutput | null {
     },
     recruiterRead:
       read && typeof read.rating === "number" && str(read.quote)
-        ? { rating: read.rating, reason: str(read.reason), quote: str(read.quote) }
+        ? {
+            rating: read.rating,
+            reason: str(read.reason),
+            quote: str(read.quote),
+          }
         : null,
   };
 }
 
 const lower = (s: string) => normalize(s).toLowerCase();
-const stripBullet = (s: string) => s.replace(/^[-•*]\s*/, "");
+const stripBullet = (s: string) => s.replace(/^([-•*]|\d+[.)])\s*/, "");
 const contains = (source: string, quote: string) => {
   const q = lower(stripBullet(quote));
   return q.length > 0 && lower(source).includes(q);
@@ -204,7 +214,22 @@ function buildPrompt(
   jobDescription: string,
   matched: string[],
   missing: string[],
+  bulletLines: string[],
 ): string {
+  const rewordingRules =
+    bulletLines.length > 0
+      ? `suggestedRewordings: up to 3 rewordings, chosen ONLY from these numbered resume lines:
+${bulletLines.map((b, i) => `${i + 1}. ${b}`).join("\n")}
+- Copy "original" exactly as written above, without the number.
+- Prefer lines that start weakly or could better show what this job values.
+- "suggested" must be a real rewrite, not the original with words added to the end.
+  If the original starts weakly, start with a strong action verb instead
+  (for example, "Responsible for shipment documentation" could become
+  "Managed shipment documentation").`
+      : `suggestedRewordings: up to 3 resume lines that could better match this job.
+- Copy "original" exactly as it appears in the resume, without bullet characters.
+- Only reword experience bullets or project descriptions, never names, job titles, or headings.`;
+
   return `You are an expert technical resume reviewer. Compare the resume between the
 <resume> tags to the job description between the <job_description> tags.
 
@@ -234,13 +259,11 @@ skillGaps: one item for each skill in the LACKS list.
 - "jobDescriptionEvidence" is a short phrase (3 to 12 words) copied exactly,
   character for character, from the job description, that mentions this skill.
 
-suggestedRewordings: up to 5 resume lines that could better match this job.
-- Copy "original" exactly as it appears in the resume, without bullet characters.
+${rewordingRules}
 - "suggested" may only use facts already in that same original line. Never add a
   technology, tool, number, job title, or company that is not in the original
   line. Never remove numbers.
 - "reason" names the job requirement the change targets.
-- Only reword experience bullets or project descriptions, never names, job titles, or headings.
 
 strengths: up to 5 things the resume already does well for this job.
 - "point" is one sentence.
@@ -321,17 +344,31 @@ export async function POST(req: Request) {
 
   if (!isJobMatchRequest(body)) {
     return Response.json(
-      { error: "A resume (data or resumeText) and a non-empty jobDescription are required" },
+      {
+        error:
+          "A resume (data or resumeText) and a non-empty jobDescription are required",
+      },
       { status: 400 },
     );
   }
 
-
   const resume = body.data ? resumeToText(body.data) : (body.resumeText ?? "");
   const jd = body.jobDescription;
+  const bulletLines = body.data
+    ? [
+        ...bullets(body.data),
+        ...body.data.projects.map((p) => p.description.trim()).filter(Boolean),
+      ]
+    : [];
 
   const keywords = compareKeywords(resume, jd);
-  const prompt = buildPrompt(resume, jd, keywords.matched, keywords.missing);
+  const prompt = buildPrompt(
+    resume,
+    jd,
+    keywords.matched,
+    keywords.missing,
+    bulletLines,
+  );
 
   let text: string;
   try {
@@ -377,30 +414,41 @@ export async function POST(req: Request) {
       a.importance === b.importance ? 0 : a.importance === "required" ? -1 : 1,
     );
 
-  const rewordable = body.data
-    ? new Set(
-        [...bullets(body.data), ...body.data.projects.map((p) => p.description)]
-          .map(lower)
-          .filter(Boolean),
-      )
-    : null;
+
+  const lineKey = (s: string) => lower(stripBullet(s)).replace(/[.;,\s]+$/, "");
+  const rewordable = body.data ? new Set(bulletLines.map(lineKey)) : null;
 
   const seen = new Set<string>();
+  const rejected: Record<string, number> = {};
+  const reject = (why: string) => {
+    rejected[why] = (rejected[why] ?? 0) + 1;
+    return false;
+  };
+
   const suggestedRewordings = parsed.suggestedRewordings
     .filter((r) => {
       const original = stripBullet(r.original);
-      const key = lower(original);
-      if (seen.has(key)) return false;
+      const key = lineKey(original);
+      if (seen.has(key)) return reject("duplicate");
       seen.add(key);
-      return (
-        contains(resume, original) &&
-        lower(r.suggested) !== key &&
-        !lower(r.suggested).startsWith(key) &&
-        addsNothingNew(original, r.suggested) &&
-        (rewordable === null || rewordable.has(key))
-      );
+      if (rewordable && !rewordable.has(key)) return reject("not a bullet");
+      if (!rewordable && !contains(resume, original))
+        return reject("not in resume");
+      const suggestedKey = lineKey(r.suggested);
+      if (suggestedKey === key || suggestedKey.startsWith(key))
+        return reject("unchanged");
+      if (!addsNothingNew(original, r.suggested))
+        return reject("adds new facts");
+      return true;
     })
-    .slice(0, 5);
+    .slice(0, 3);
+
+
+  console.log("rewordings", {
+    fromAI: parsed.suggestedRewordings.length,
+    kept: suggestedRewordings.length,
+    rejected,
+  });
 
   const strengths = parsed.strengths
     .filter((s) => contains(resume, s.evidence))
