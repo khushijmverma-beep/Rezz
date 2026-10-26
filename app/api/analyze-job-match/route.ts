@@ -196,7 +196,7 @@ function claimsMissingSkill(item: string, missing: string[]): boolean {
   const mentioned = findSkills(item);
   if (!mentioned.some((skill) => missing.includes(skill))) return false;
   const tellsToAdd =
-    /\b(add|include|list|mention|put|write)\b.*\b(resume|cv|skills section|experience section)\b/i.test(
+    /\b(add|include|list|mention|put|write|describe)\b[^.]*\b(line|bullet|resume|cv|section|experience)\b/i.test(
       item,
     );
   const conditional = /\b(once|after|when|if)\b/i.test(item);
@@ -255,7 +255,8 @@ Return ONLY valid JSON, with no prose and no markdown code fences, in exactly th
 skillGaps: one item for each skill in the LACKS list.
 - "skill" uses the exact name from the LACKS list.
 - "note" is exactly two sentences: why this job needs the skill, then one
-  concrete way the candidate could close the gap.
+  concrete way the candidate could close the gap by learning or building
+  something. Never suggest adding the skill to the resume without having done it.
 - "jobDescriptionEvidence" is a short phrase (3 to 12 words) copied exactly,
   character for character, from the job description, that mentions this skill.
 
@@ -392,6 +393,7 @@ export async function POST(req: Request) {
     parsed.skillGaps.map((g) => [g.skill.toLowerCase(), g]),
   );
   const unmet = keywords.requirements.filter((r) => !r.met);
+  const missingSkills = unmet.flatMap((r) => r.skills);
 
   const skillGaps: SkillGap[] = unmet
     .map((req): SkillGap => {
@@ -405,15 +407,15 @@ export async function POST(req: Request) {
         skill: req.label,
         importance: evidence.section ?? "preferred",
         note:
-          fromModel?.note ||
-          `This posting asks for ${req.label}, and it does not appear in your resume. If you have used it, add it with a specific example; if not, a small project using it would close this gap.`,
+          fromModel?.note && !claimsMissingSkill(fromModel.note, missingSkills)
+            ? fromModel.note
+            : `This posting asks for ${req.label}, and it does not appear in your resume. If you have used it, add it with a specific example; if not, a small project using it would close this gap.`,
         jobDescriptionEvidence: evidence.phrase || modelQuote,
       };
     })
     .sort((a, b) =>
       a.importance === b.importance ? 0 : a.importance === "required" ? -1 : 1,
     );
-
 
   const lineKey = (s: string) => lower(stripBullet(s)).replace(/[.;,\s]+$/, "");
   const rewordable = body.data ? new Set(bulletLines.map(lineKey)) : null;
@@ -443,7 +445,6 @@ export async function POST(req: Request) {
     })
     .slice(0, 3);
 
-
   console.log("rewordings", {
     fromAI: parsed.suggestedRewordings.length,
     kept: suggestedRewordings.length,
@@ -458,7 +459,6 @@ export async function POST(req: Request) {
   const metCount = total - unmet.length;
   const keywordScore = total === 0 ? 100 : Math.round((metCount / total) * 100);
 
-  const missingSkills = unmet.flatMap((r) => r.skills);
   const honestActions = parsed.actionItems.filter(
     (item) => !claimsMissingSkill(item, missingSkills),
   );

@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import type { CheckStatus, JobMatchResult, ScoreSection } from "@/lib/types/job-match";
 import type { ResumeData } from "@/lib/types/resume";
 import styles from "./AnalyzePanel.module.css";
+import ReportExpanded from "./ReportExpanded";
 
 type AnalyzePanelProps = {
   resumeText?: string; // old way, kept until Juan passes data
@@ -92,8 +93,10 @@ export default function AnalyzePanel({ resumeText, data, templateId, onResult }:
   const [result, setResult] = useState<JobMatchResult | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
+  const [expanded, setExpanded] = useState(false);
 
   async function runAnalysis() {
+    setExpanded(false);
     setIsLoading(true);
     setError(null);
     setResult(null);
@@ -117,9 +120,9 @@ export default function AnalyzePanel({ resumeText, data, templateId, onResult }:
 
         const message =
           typeof body === "object" &&
-          body !== null &&
-          "error" in body &&
-          typeof (body as { error: unknown }).error === "string"
+            body !== null &&
+            "error" in body &&
+            typeof (body as { error: unknown }).error === "string"
             ? (body as { error: string }).error
             : "Analysis failed";
         setError(message);
@@ -146,6 +149,7 @@ export default function AnalyzePanel({ resumeText, data, templateId, onResult }:
   }
 
   function handleEdit() {
+    setExpanded(false);
     setResult(null);
     setError(null);
   }
@@ -195,9 +199,8 @@ export default function AnalyzePanel({ resumeText, data, templateId, onResult }:
         <p className={styles.detailTitle}>
           {gap.skill}{" "}
           <span
-            className={`${styles.importanceBadge} ${
-              gap.importance === "required" ? styles.required : styles.preferred
-            }`}
+            className={`${styles.importanceBadge} ${gap.importance === "required" ? styles.required : styles.preferred
+              }`}
           >
             {gap.importance}
           </span>
@@ -212,7 +215,13 @@ export default function AnalyzePanel({ resumeText, data, templateId, onResult }:
     return (
       <section className={styles.panel} aria-live="polite">
         <div className={styles.resultView}>
-          <h2 className={styles.heading}>Result</h2>
+          <div className={styles.modalHeader}>
+            <h2 className={styles.heading}>Result</h2>
+            <button type="button" className={styles.secondaryButton} onClick={() => setExpanded(true)}>
+              Expand
+            </button>
+          </div>
+          {expanded && <ReportExpanded result={result} onClose={() => setExpanded(false)} />}
           <div className={styles.resultContent}>
             {result.ats && result.human ? (
               <>

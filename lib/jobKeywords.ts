@@ -72,6 +72,12 @@ type Connector = "or" | "comma" | "break";
 
 function connector(between: string): Connector {
   if (/^\s*,?\s*(?:or|\/)\s*$/i.test(between)) return "or";
+  if (
+    /\b(?:such as|like|e\.g\.?|including)\s*$/i.test(between) &&
+    between.trim().split(/\s+/).length <= 4
+  ) {
+    return "or";
+  }
   if (/^\s*,\s*$/.test(between)) return "comma";
   return "break";
 }
