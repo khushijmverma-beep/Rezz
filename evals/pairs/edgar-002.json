@@ -1,0 +1,84 @@
+{
+  "id": "edgar-002",
+  "resumeText": "Test Candidate\nTX | 555-010-0100 | candidate@example.com | linkedin.com/in/test-candidate | github.com/test-candidate\n\nEducation\nState University, TX\nBachelor of Science in Computer Science, GPA: 3.4, Expected May 2028\nRelevant Coursework: Data Structures & Algorithms, Database Systems, Machine Learning, Software Engineering, C/C++ Programming in a UNIX Environment\n\nTechnical Skills\nLanguages: Java, Python, SQL, JavaScript, TypeScript\nFrameworks & Libraries: Spring Boot, Spring Security, JPA/Hibernate, FastAPI, Next.js, React, Pandas, Scikit-learn\nDatabases: PostgreSQL, MySQL, SQLite\nDeveloper Tools & DevOps: Git, GitHub Actions, Docker, Linux, pytest, Railway, Vercel\nConcepts: Object-Oriented Design, REST APIs, Unit Testing, Agile/Scrum\nAI/LLM: Gemini API, Prompt engineering, Structured output validation\nWork Auth & Languages: U.S. Citizen, no sponsorship required | English, Spanish (fluent)\n\nExperience\nUniversity Developer Club, TX\nBackend Developer, Sep 2026 - Present\n- Built Next.js/TypeScript API routes that sort pasted text and uploaded PDF/.txt documents into 14 profile fields, plus a matching endpoint that scores relevance and missing keywords.\n- Validated Gemini output with TypeScript type guards, dropping any value the model invented or reworded.\n- Owned the shared data contract (TypeScript types), coordinating field changes with teammates via PRs.\n- Built a React chat panel that calls an extraction API and maps each status code to a user-facing message.\n- Added an offline mock mode so 2 teammates could build frontend features without using API quota.\n\nLogistics Company, TX\nAdministrative Assistant, Sep 2022 - Jul 2023\n- Managed freight documentation and rate confirmations, and supported dispatch across daily shipping workflows.\n\nProjects\nSavings Tracker | Python, FastAPI, React, PostgreSQL, SQLAlchemy, Docker, JWT\n- Built a full-stack savings tracker with a summary API computing per-habit totals and longest streaks.\n- Secured endpoints with JWT auth, bcrypt hashing, and row-level ownership checks for user data isolation.\n- Set up GitHub Actions CI running automated tests on every push; Dockerized and deployed on Railway/Vercel.\n- Wrote 17 pytest tests for auth and business logic, catching a duplicate-entry bug corrupting streak calculations.\n\nApplication Tracker | Java, Spring Boot, Spring Security, JPA/Hibernate, PostgreSQL, Gemini API\n- Built a Spring Boot REST API with 8 endpoints in a layered controller/service/repository design.\n- Integrated the Gemini API to score documents against descriptions, prompting for structured JSON output.\n- Implemented stateless JWT auth in Spring Security with a custom per-request token filter and BCrypt hashing.\n- Enforced per-user data isolation by scoping all reads and writes to the authenticated user.\n\nCredit Risk Model | Python, Scikit-learn, Pandas\n- Cut 122 features to 76 by missingness across 300K+ records, with per-column imputation and missing flags.\n- Trained Logistic Regression (ROC-AUC 0.749) and Random Forest (0.741) models, using class weights for an 8% default rate.\n- Selected an F1-optimal threshold of 0.671 (24.1% precision, about 3x the 8% base rate; 39.7% recall).",
+  "jobDescription": "University - 2027 Summer Games Software Developer Intern - Ft. Walton Beach, FL\nThe Opportunity:\nThe Summer Games is an innovative internship program that attracts some of the nation's best and brightest students. The goal is to develop a breakthrough idea or solution for one of our customer's most pressing, complex, and multidimensional problems while developing valuable technical skills. Simulating a real-world startup accelerator environment, the interns are divided into teams, each working on a different challenge project. Throughout the Games, interns receive mentorship from senior leaders, solve problems using Booz Allen's products and unique engagement models, and leverage the power of collaboration in a team environment.\nThe summer culminates with a final Challenge Cup competition and presentation to senior leadership.\n\nYou Have:\nExperience with programming languages, including Java, JavaScript, C, C++, Assembly, Python, Perl, R, or Bash\nExperience with machine learning, data mining, statistics, or graph algorithms in academic or internship environments\nExperience with conducting research and writing software\nAbility to produce technical documentation and create design artifacts\nAbility to work independently and in teams\nAbility to obtain a Secret clearance\nScheduled to obtain a Bachelor's degree in a Technology, Engineering, or Mathematics field by Summer 2028 or Summer 2029\n\nNice If You Have:\nAbility to produce technical documentation and create design artifacts\nPossession of excellent critical thinking and analytical skills\nPossession of excellent verbal and written communication skills\n\nClearance:\nApplicants selected will be subject to a security investigation and may need to meet eligibility requirements for access to classified information.",
+  "templateId": "simple",
+  "humanAtsScore": 3,
+  "humanRecruiterScore": 2,
+  "notes": "Matches languages, ML, and grad date, but shows no research, technical documentation, communication skills, or clearance eligibility.",
+  "resumeData": {
+    "firstName": "Test",
+    "lastName": "Candidate",
+    "email": "candidate@example.com",
+    "phone": "555-010-0100",
+    "location": "TX",
+    "linkedin": "linkedin.com/in/test-candidate",
+    "github": "github.com/test-candidate",
+    "website": "",
+    "summary": "",
+    "experience": [
+      {
+        "company": "University Developer Club",
+        "title": "Backend Developer",
+        "location": "TX",
+        "startDate": "Sep 2026",
+        "endDate": "Present",
+        "bullets": [
+          "Built Next.js/TypeScript API routes that sort pasted text and uploaded PDF/.txt documents into 14 profile fields, plus a matching endpoint that scores relevance and missing keywords.",
+          "Validated Gemini output with TypeScript type guards, dropping any value the model invented or reworded.",
+          "Owned the shared data contract (TypeScript types), coordinating field changes with teammates via PRs.",
+          "Built a React chat panel that calls an extraction API and maps each status code to a user-facing message.",
+          "Added an offline mock mode so 2 teammates could build frontend features without using API quota."
+        ]
+      },
+      {
+        "company": "Logistics Company",
+        "title": "Administrative Assistant",
+        "location": "TX",
+        "startDate": "Sep 2022",
+        "endDate": "Jul 2023",
+        "bullets": [
+          "Managed freight documentation and rate confirmations, and supported dispatch across daily shipping workflows."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "State University",
+        "degree": "Bachelor of Science",
+        "field": "Computer Science",
+        "startDate": "",
+        "endDate": "May 2028",
+        "gpa": "3.4"
+      }
+    ],
+    "skills": [
+      "Java", "Python", "SQL", "JavaScript", "TypeScript",
+      "Spring Boot", "Spring Security", "JPA/Hibernate", "FastAPI", "Next.js", "React", "Pandas", "Scikit-learn",
+      "PostgreSQL", "MySQL", "SQLite",
+      "Git", "GitHub Actions", "Docker", "Linux", "pytest", "Railway", "Vercel",
+      "Object-Oriented Design", "REST APIs", "Unit Testing", "Agile/Scrum",
+      "Gemini API", "Prompt engineering", "Structured output validation"
+    ],
+    "projects": [
+      {
+        "name": "Savings Tracker",
+        "link": "",
+        "description": "Python, FastAPI, React, PostgreSQL, SQLAlchemy, Docker, JWT. Built a full-stack savings tracker with a summary API computing per-habit totals and longest streaks. Secured endpoints with JWT auth, bcrypt hashing, and row-level ownership checks for user data isolation. Set up GitHub Actions CI running automated tests on every push; Dockerized and deployed on Railway/Vercel. Wrote 17 pytest tests for auth and business logic, catching a duplicate-entry bug corrupting streak calculations."
+      },
+      {
+        "name": "Application Tracker",
+        "link": "",
+        "description": "Java, Spring Boot, Spring Security, JPA/Hibernate, PostgreSQL, Gemini API. Built a Spring Boot REST API with 8 endpoints in a layered controller/service/repository design. Integrated the Gemini API to score documents against descriptions, prompting for structured JSON output. Implemented stateless JWT auth in Spring Security with a custom per-request token filter and BCrypt hashing. Enforced per-user data isolation by scoping all reads and writes to the authenticated user."
+      },
+      {
+        "name": "Credit Risk Model",
+        "link": "",
+        "description": "Python, Scikit-learn, Pandas. Cut 122 features to 76 by missingness across 300K+ records, with per-column imputation and missing flags. Trained Logistic Regression (ROC-AUC 0.749) and Random Forest (0.741) models, using class weights for an 8% default rate. Selected an F1-optimal threshold of 0.671 (24.1% precision, about 3x the 8% base rate; 39.7% recall)."
+      }
+    ],
+    "awards": [],
+    "certifications": [],
+    "languages": ["English", "Spanish"]
+  }
+}

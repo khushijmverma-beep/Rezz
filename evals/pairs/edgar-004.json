@@ -1,0 +1,84 @@
+{
+  "id": "edgar-005",
+  "resumeText": "Test Candidate\nTX | 555-010-0100 | candidate@example.com | linkedin.com/in/test-candidate | github.com/test-candidate\n\nEducation\nState University, TX\nBachelor of Science in Computer Science, GPA: 3.4, Expected May 2028\nRelevant Coursework: Data Structures & Algorithms, Database Systems, Machine Learning, Software Engineering, C/C++ Programming in a UNIX Environment\n\nTechnical Skills\nLanguages: Java, Python, SQL, JavaScript, TypeScript\nFrameworks & Libraries: Spring Boot, Spring Security, JPA/Hibernate, FastAPI, Next.js, React, Pandas, Scikit-learn\nDatabases: PostgreSQL, MySQL, SQLite\nDeveloper Tools & DevOps: Git, GitHub Actions, Docker, Linux, pytest, Railway, Vercel\nConcepts: Object-Oriented Design, REST APIs, Unit Testing, Agile/Scrum\nAI/LLM: Gemini API, Prompt engineering, Structured output validation\nWork Auth & Languages: U.S. Citizen, no sponsorship required | English, Spanish (fluent)\n\nExperience\nUniversity Developer Club, TX\nBackend Developer, Sep 2026 - Present\n- Built Next.js/TypeScript API routes that sort pasted text and uploaded PDF/.txt documents into 14 profile fields, plus a matching endpoint that scores relevance and missing keywords.\n- Validated Gemini output with TypeScript type guards, dropping any value the model invented or reworded.\n- Owned the shared data contract (TypeScript types), coordinating field changes with teammates via PRs.\n- Built a React chat panel that calls an extraction API and maps each status code to a user-facing message.\n- Added an offline mock mode so 2 teammates could build frontend features without using API quota.\n\nLogistics Company, TX\nAdministrative Assistant, Sep 2022 - Jul 2023\n- Managed freight documentation and rate confirmations, and supported dispatch across daily shipping workflows.\n\nProjects\nSavings Tracker | Python, FastAPI, React, PostgreSQL, SQLAlchemy, Docker, JWT\n- Built a full-stack savings tracker with a summary API computing per-habit totals and longest streaks.\n- Secured endpoints with JWT auth, bcrypt hashing, and row-level ownership checks for user data isolation.\n- Set up GitHub Actions CI running automated tests on every push; Dockerized and deployed on Railway/Vercel.\n- Wrote 17 pytest tests for auth and business logic, catching a duplicate-entry bug corrupting streak calculations.\n\nApplication Tracker | Java, Spring Boot, Spring Security, JPA/Hibernate, PostgreSQL, Gemini API\n- Built a Spring Boot REST API with 8 endpoints in a layered controller/service/repository design.\n- Integrated the Gemini API to score documents against descriptions, prompting for structured JSON output.\n- Implemented stateless JWT auth in Spring Security with a custom per-request token filter and BCrypt hashing.\n- Enforced per-user data isolation by scoping all reads and writes to the authenticated user.\n\nCredit Risk Model | Python, Scikit-learn, Pandas\n- Cut 122 features to 76 by missingness across 300K+ records, with per-column imputation and missing flags.\n- Trained Logistic Regression (ROC-AUC 0.749) and Random Forest (0.741) models, using class weights for an 8% default rate.\n- Selected an F1-optimal threshold of 0.671 (24.1% precision, about 3x the 8% base rate; 39.7% recall).",
+  "jobDescription": "About the job\nAbout Ramp\nRamp is building the smart infrastructure for finance teams, embedded in the transaction flow of every dollar a business spends.\n\nAbout The Role\nRamp is, at its core, an engineering company. We are looking for iOS interns (12 or 16 weeks) who are excited to be part of our story and help us build a diverse and vibrant tech community. We hire engineers with a broad set of technical skills, who are highly cross-functional, and eager to solve a wide range of engineering challenges. Our ideal candidate has a strong sense of ownership and enjoys owning projects from inception to scaling them in production.\n\nWhat You'll Do\nBuild and ship new features for Ramp's iOS app\nWork alongside experienced engineers and contribute to our mobile codebase\nCollaborate with Product and Design to bring new features and experiences to life\nLearn from customer feedback and help continuously improve our product\nContribute to engineering tools and processes that help the team move quickly and scale\n\nWhat You'll Need\nCurrently pursuing a B.S. or higher in Computer Science or a related technical field, graduating December 2027 or later\nExperience with Swift and/or iOS development through internships, coursework, or personal projects\nStrong programming fundamentals and understanding of mobile development concepts\nExperience building a mobile app, feature, or relevant project\nAbility to turn product ideas into thoughtful engineering solutions\nDesire to learn quickly, take ownership, and work in a fast-paced environment\n\nNice to Haves\nExperience with SwiftUI\nFamiliarity with mobile design patterns and best practices\nExperience shipping an iOS app or feature to real users\nExposure to technologies in our mobile stack, including Swift Concurrency, The Composable Architecture, Bazel, OpenAPI, or Buildkite\nExperience with web or backend development",
+  "templateId": "simple",
+  "humanAtsScore": 1,
+  "humanRecruiterScore": 1,
+  "notes": "iOS role; resume has no Swift, iOS, or mobile work, only the grad date and backend experience match.",
+  "resumeData": {
+    "firstName": "Test",
+    "lastName": "Candidate",
+    "email": "candidate@example.com",
+    "phone": "555-010-0100",
+    "location": "TX",
+    "linkedin": "linkedin.com/in/test-candidate",
+    "github": "github.com/test-candidate",
+    "website": "",
+    "summary": "",
+    "experience": [
+      {
+        "company": "University Developer Club",
+        "title": "Backend Developer",
+        "location": "TX",
+        "startDate": "Sep 2026",
+        "endDate": "Present",
+        "bullets": [
+          "Built Next.js/TypeScript API routes that sort pasted text and uploaded PDF/.txt documents into 14 profile fields, plus a matching endpoint that scores relevance and missing keywords.",
+          "Validated Gemini output with TypeScript type guards, dropping any value the model invented or reworded.",
+          "Owned the shared data contract (TypeScript types), coordinating field changes with teammates via PRs.",
+          "Built a React chat panel that calls an extraction API and maps each status code to a user-facing message.",
+          "Added an offline mock mode so 2 teammates could build frontend features without using API quota."
+        ]
+      },
+      {
+        "company": "Logistics Company",
+        "title": "Administrative Assistant",
+        "location": "TX",
+        "startDate": "Sep 2022",
+        "endDate": "Jul 2023",
+        "bullets": [
+          "Managed freight documentation and rate confirmations, and supported dispatch across daily shipping workflows."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "State University",
+        "degree": "Bachelor of Science",
+        "field": "Computer Science",
+        "startDate": "",
+        "endDate": "May 2028",
+        "gpa": "3.4"
+      }
+    ],
+    "skills": [
+      "Java", "Python", "SQL", "JavaScript", "TypeScript",
+      "Spring Boot", "Spring Security", "JPA/Hibernate", "FastAPI", "Next.js", "React", "Pandas", "Scikit-learn",
+      "PostgreSQL", "MySQL", "SQLite",
+      "Git", "GitHub Actions", "Docker", "Linux", "pytest", "Railway", "Vercel",
+      "Object-Oriented Design", "REST APIs", "Unit Testing", "Agile/Scrum",
+      "Gemini API", "Prompt engineering", "Structured output validation"
+    ],
+    "projects": [
+      {
+        "name": "Savings Tracker",
+        "link": "",
+        "description": "Python, FastAPI, React, PostgreSQL, SQLAlchemy, Docker, JWT. Built a full-stack savings tracker with a summary API computing per-habit totals and longest streaks. Secured endpoints with JWT auth, bcrypt hashing, and row-level ownership checks for user data isolation. Set up GitHub Actions CI running automated tests on every push; Dockerized and deployed on Railway/Vercel. Wrote 17 pytest tests for auth and business logic, catching a duplicate-entry bug corrupting streak calculations."
+      },
+      {
+        "name": "Application Tracker",
+        "link": "",
+        "description": "Java, Spring Boot, Spring Security, JPA/Hibernate, PostgreSQL, Gemini API. Built a Spring Boot REST API with 8 endpoints in a layered controller/service/repository design. Integrated the Gemini API to score documents against descriptions, prompting for structured JSON output. Implemented stateless JWT auth in Spring Security with a custom per-request token filter and BCrypt hashing. Enforced per-user data isolation by scoping all reads and writes to the authenticated user."
+      },
+      {
+        "name": "Credit Risk Model",
+        "link": "",
+        "description": "Python, Scikit-learn, Pandas. Cut 122 features to 76 by missingness across 300K+ records, with per-column imputation and missing flags. Trained Logistic Regression (ROC-AUC 0.749) and Random Forest (0.741) models, using class weights for an 8% default rate. Selected an F1-optimal threshold of 0.671 (24.1% precision, about 3x the 8% base rate; 39.7% recall)."
+      }
+    ],
+    "awards": [],
+    "certifications": [],
+    "languages": ["English", "Spanish"]
+  }
+}
