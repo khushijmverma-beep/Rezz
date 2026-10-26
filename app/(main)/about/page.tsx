@@ -40,6 +40,10 @@ export default function AboutPage() {
         <h2 id="privacy">A note on privacy</h2>
         <p>Only add personal information you want included in your resume. When you use AI features, the information needed for that request is sent to our AI provider for processing. Avoid including sensitive details such as passwords or government identification numbers.</p>
       </section>
+       <section className="about-section" aria-labelledby="aidisclaimer">
+        <h2 id="aidisclaimer">AI Disclaimer</h2>
+        <p>Your resume text is sent to third party AI providers to sort and score. The AI will never rewrite your resume and users can always delete their data.</p>
+      </section>
       <section className="about-section" aria-labelledby="project">
         <h2 id="project">Built to learn. Built to help.</h2>
         <p>Rezz is a student project built through GDSC at UT Dallas.</p>
