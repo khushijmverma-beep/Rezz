@@ -1,5 +1,6 @@
 // Shared types for job match. Used by the analyze-job-match route and
 // components/AnalyzePanel.tsx, so changes here affect both files.
+import type { ResumeData } from "@/lib/types/resume";
 export type CheckStatus = "pass" | "warn" | "fail";
 
 export type ScoreCheck = {
@@ -25,7 +26,9 @@ export type TopFix = {
 }
 
 export type JobMatchRequest = {
-    resumeText: string;
+    resumeText?: string; 
+    data?: ResumeData;  
+    templateId?: string;
     jobDescription: string;
 }
 

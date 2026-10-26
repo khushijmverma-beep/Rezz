@@ -1,7 +1,7 @@
 import type { ScoreCheck, ScoreResult, TopFix } from "@/lib/types/job-match";
 import type { ResumeData } from "@/lib/types/resume";
 import { scoreAts } from "./ats";
-import { scoreHuman } from "./human";
+import { scoreHuman, type AiJudgement } from "./human";
 
 export const SCORER_VERSION = "0.1.0";
 
@@ -9,6 +9,7 @@ export type ScoreInput = {
   data: ResumeData;
   templateId: string;
   jobDescription: string;
+  ai?: AiJudgement | null;
 };
 
 
@@ -42,12 +43,12 @@ function topFixesFrom(checks: { check: ScoreCheck; view: string }[]): TopFix[] {
     .slice(0, 5);
 }
 
-export async function scoreResume({ data, jobDescription }: ScoreInput): Promise<ScoreResult> {
+export async function scoreResume({ data, jobDescription, ai }: ScoreInput): Promise<ScoreResult> {
   // TODO: read atsFriendly for templateId
   const ats = scoreAts({ data, jobDescription });
 
   // TODO: pass the AI judgement once the model call is added.
-  const human = scoreHuman({ data, jobDescription });
+  const human = scoreHuman({ data, jobDescription, ai });
 
   const topFixes = topFixesFrom([
     ...ats.checks.map((check) => ({ check, view: "ATS" })),

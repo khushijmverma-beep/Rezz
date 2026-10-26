@@ -471,3 +471,74 @@
   color: #858e9c;
   text-decoration: line-through;
 }
+
+
+.checkDetails {
+  margin-top: 12px;
+}
+
+.checkDetails > summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.checkList {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.checkRow {
+  border-top: 1px solid rgba(127, 127, 127, 0.2);
+  padding-top: 8px;
+}
+
+.checkHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkLabel {
+  flex: 1;
+  font-weight: 600;
+}
+
+.checkPoints {
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+.statusBadge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.statusPass {
+  background: #e6f4ea;
+  color: #1e6b34;
+}
+
+.statusWarn {
+  background: #fef4e0;
+  color: #8a5a00;
+}
+
+.statusFail {
+  background: #fde8e8;
+  color: #9b1c1c;
+}
+
+.fixList {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+}

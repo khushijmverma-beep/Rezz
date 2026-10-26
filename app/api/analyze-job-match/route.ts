@@ -13,19 +13,37 @@ import type {
 } from "@/lib/types/job-match";
 import { callLLM, hasConfiguredAIProvider } from "@/lib/llm";
 import { GeminiError } from "@/lib/gemini";
+import type { ResumeData } from "@/lib/types/resume";
+import { resumeText as resumeToText } from "@/lib/scoring/ats";
+import { scoreResume } from "@/lib/scoring";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function isJobMatchRequest(value: unknown): value is JobMatchRequest {
-  return (
-    isRecord(value) &&
-    typeof value.resumeText === "string" &&
-    value.resumeText.trim().length > 0 &&
-    typeof value.jobDescription === "string" &&
-    value.jobDescription.trim().length > 0
+function isResumeData(v: unknown): v is ResumeData {
+  if (!isRecord(v)) return false;
+  const strings = ["firstName", "lastName", "email", "phone", "summary"].every(
+    (k) => typeof v[k] === "string",
   );
+  const arrays = ["experience", "education", "skills", "projects", "awards"].every(
+    (k) => Array.isArray(v[k]),
+  );
+  const bulletsOk =
+    Array.isArray(v.experience) &&
+    v.experience.every((e) => isRecord(e) && Array.isArray(e.bullets));
+  return strings && arrays && bulletsOk;
+}
+
+function isJobMatchRequest(value: unknown): value is JobMatchRequest {
+  if (!isRecord(value)) return false;
+  const jdOk =
+    typeof value.jobDescription === "string" && value.jobDescription.trim().length > 0;
+  const hasText =
+    typeof value.resumeText === "string" && value.resumeText.trim().length > 0;
+  const dataOk = value.data === undefined || isResumeData(value.data);
+  const templateOk = value.templateId === undefined || typeof value.templateId === "string";
+  return jdOk && dataOk && templateOk && (hasText || value.data !== undefined);
 }
 
 type Strength = JobMatchResult["strengths"][number];
@@ -38,6 +56,7 @@ type ModelOutput = {
   actionItems: string[];
   overallFit: { matchScore: number; summary: string };
   emptyReasons: { skillGaps: string; suggestedRewordings: string };
+  recruiterRead: { rating: number; reason: string; quote: string } | null;
 };
 
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
@@ -106,6 +125,7 @@ function parseModelOutput(text: string): ModelOutput | null {
   const fit = isRecord(obj.overallFit) ? obj.overallFit : {};
   const scores = isRecord(obj.categoryScores) ? obj.categoryScores : {};
   const reasons = isRecord(obj.emptyReasons) ? obj.emptyReasons : {};
+  const read = isRecord(obj.recruiterRead) ? obj.recruiterRead : null;
 
   return {
     skillGaps: arr(obj.skillGaps)
@@ -131,6 +151,10 @@ function parseModelOutput(text: string): ModelOutput | null {
       skillGaps: str(reasons.skillGaps),
       suggestedRewordings: str(reasons.suggestedRewordings),
     },
+    recruiterRead:
+      read && typeof read.rating === "number" && str(read.quote)
+        ? { rating: read.rating, reason: str(read.reason), quote: str(read.quote) }
+        : null,
   };
 }
 
@@ -199,7 +223,8 @@ Return ONLY valid JSON, with no prose and no markdown code fences, in exactly th
   "categoryScores": { "skills": number, "experience": number, "education": number },
   "actionItems": [string],
   "overallFit": { "matchScore": number, "summary": string },
-  "emptyReasons": { "skillGaps": string, "suggestedRewordings": string }
+  "emptyReasons": { "skillGaps": string, "suggestedRewordings": string },
+  "recruiterRead": { "rating": number, "reason": string, "quote": string }
 }
 
 skillGaps: one item for each skill in the LACKS list.
@@ -241,6 +266,12 @@ overallFit:
 emptyReasons: if skillGaps or suggestedRewordings is empty, give a one-sentence
 reason (for example, "The resume covers every skill this posting asks for.").
 Otherwise use an empty string.
+
+recruiterRead: imagine a recruiter skimming this resume for 10 seconds for this job.
+- "rating" is an integer from 1 to 5: would they keep reading? 1 means no, 5 means definitely.
+- "reason" is one sentence explaining the rating.
+- "quote" is a phrase of 5 to 20 words copied exactly from the resume that most
+  influenced the rating.
 
 Never invent facts about the candidate. Only reuse what is in the resume text.
 
@@ -289,18 +320,17 @@ export async function POST(req: Request) {
 
   if (!isJobMatchRequest(body)) {
     return Response.json(
-      { error: "resumeText and jobDescription are required non-empty strings" },
+      { error: "A resume (data or resumeText) and a non-empty jobDescription are required" },
       { status: 400 },
     );
   }
 
-  const keywords = compareKeywords(body.resumeText, body.jobDescription);
-  const prompt = buildPrompt(
-    body.resumeText,
-    body.jobDescription,
-    keywords.matched,
-    keywords.missing,
-  );
+
+  const resume = body.data ? resumeToText(body.data) : (body.resumeText ?? "");
+  const jd = body.jobDescription;
+
+  const keywords = compareKeywords(resume, jd);
+  const prompt = buildPrompt(resume, jd, keywords.matched, keywords.missing);
 
   let text: string;
   try {
@@ -319,9 +349,6 @@ export async function POST(req: Request) {
       { status: 502 },
     );
   }
-
-  const resume = body.resumeText;
-  const jd = body.jobDescription;
 
   const modelGaps = new Map(
     parsed.skillGaps.map((g) => [g.skill.toLowerCase(), g]),
@@ -401,6 +428,15 @@ export async function POST(req: Request) {
       "No safe rewordings found for this job description.";
   }
 
+  const scores = body.data
+    ? await scoreResume({
+        data: body.data,
+        templateId: body.templateId ?? "",
+        jobDescription: jd,
+        ai: parsed.recruiterRead,
+      })
+    : null;
+
   const matchScore = parsed.overallFit.matchScore || keywordScore;
   const result: JobMatchResult = {
     missingKeywords: keywords.missing,
@@ -418,16 +454,7 @@ export async function POST(req: Request) {
         `Your resume matches ${metCount} of ${total} requirements this posting lists.`,
     },
     emptyReasons,
-    scorerVersion: "",
-    topFixes: [],
-    ats: {
-      score: 0,
-      checks: [],
-    },
-    human: {
-      score: 0,
-      checks: [],
-    },
+    ...(scores ?? {}),
   };
 
   return Response.json(result);
