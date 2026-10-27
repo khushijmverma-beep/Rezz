@@ -1,17 +1,22 @@
-
 "use client";
 
-import Image from "next/image";
+import ResumeThumbnail from "@/components/templates/ResumeThumbnail";
+import { sampleResume } from "@/lib/templates";
+import type { TemplateId } from "@/lib/types/resume";
 
 type TemplateCardProps = {
   name: string;
-  templateId: string;
+  templateId: TemplateId;
+  atsFriendly?: boolean;
+  atsNote?: string;
   onClick: () => void;
 };
 
 export default function TemplateCard({
   name,
   templateId,
+  atsFriendly,
+  atsNote,
   onClick,
 }: TemplateCardProps) {
   return (
@@ -20,20 +25,16 @@ export default function TemplateCard({
       onClick={onClick}
       className="group w-40 shrink-0 text-left"
     >
-      <div className="relative flex aspect-[8.5/11] items-center justify-center overflow-hidden rounded-md border border-gray-200 bg-gray-100 transition group-hover:border-gray-400 group-hover:shadow-md">
-        {templateId === "blank" ? (
-          <span className="text-5xl font-light text-gray-400">+</span>
-        ) : (
-          <Image
-            src={`/templates/${templateId}.png`}
-            alt={`${name} resume template preview`}
-            fill
-            sizes="160px"
-            className="object-cover"
-            onError={(event) => {
-              event.currentTarget.style.display = "none";
-            }}
-          />
+      <div className="relative overflow-hidden rounded-md border border-gray-200 bg-white transition group-hover:border-gray-400 group-hover:shadow-md">
+        <ResumeThumbnail templateId={templateId} data={sampleResume} />
+
+        {atsFriendly && (
+          <span
+            title={atsNote}
+            className="absolute bottom-1.5 left-1.5 rounded border border-gray-300 bg-white/95 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-800"
+          >
+            ATS-friendly
+          </span>
         )}
       </div>
 
