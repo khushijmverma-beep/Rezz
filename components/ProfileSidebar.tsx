@@ -8,6 +8,7 @@ import { Home, FileText, Activity, BookOpen, Info, LogOut } from "lucide-react";
 import { app } from "@/lib/firebase";
 import { getPhoto } from "@/lib/profilePhoto";
 import Avatar from "@/components/Avatar";
+import Logo from "@/components/Logo";
 
 // change these hrefs if your routes are named differently
 const NAV = [
@@ -78,8 +79,9 @@ export default function Sidebar() {
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <p className="mb-5 text-xl font-bold">Rezz</p>
-
+        <Link href="/" onClick={() => setOpen(false)} className="mb-5 block text-black!">
+          <Logo size={28} />
+        </Link>
         <Link
           href="/settings"
           onClick={() => setOpen(false)}
