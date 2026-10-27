@@ -85,8 +85,13 @@ export async function createDraft(
   uid: string,
   draft: CreateDraftInput,
 ): Promise<string> {
+  // Firestore rejects undefined values (e.g. a missing targetRole), so drop them.
+  const fields = Object.fromEntries(
+    Object.entries(draft).filter(([, value]) => value !== undefined),
+  );
+
   const draftRef = await addDoc(draftsCollection(uid), {
-    ...draft,
+    ...fields,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
