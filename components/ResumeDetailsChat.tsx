@@ -7,6 +7,7 @@ import styles from "./ResumeDetailsChat.module.css";
 const MAX_CHARS = 8000;
 
 const FIELD_LABELS: Record<keyof ResumeData, string> = {
+  style: "Text styling",
   firstName: "First name",
   lastName: "Last name",
   email: "Email",

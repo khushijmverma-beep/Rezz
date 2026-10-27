@@ -8,6 +8,7 @@ import type {
   ResumeData,
   TemplateId,
 } from "@/lib/types/resume";
+import { resumeStyleVariables } from "./resumeStyle";
 import EditableText from "./EditableText";
 import type { TemplateProps } from "./types";
 import styles from "./templates.module.css";
@@ -204,6 +205,7 @@ export default function ResumeLayout({
                 "experience",
                 data.experience.map((entry, i) => (i === index ? { ...entry, company: value } : entry)),
               ),
+              styles.organization,
             )}
             {field(item.location, "Job location", (value) =>
               update(
@@ -307,6 +309,7 @@ export default function ResumeLayout({
                 "education",
                 data.education.map((entry, i) => (i === index ? { ...entry, school: value } : entry)),
               ),
+              styles.organization,
             )}
             {editable ? (
               <>
@@ -404,7 +407,7 @@ export default function ResumeLayout({
   const body = (
     <>
       {section(
-        "Profile",
+        variant === "engineer" || variant === "ats-standard" ? "Summary" : "Profile",
         hasText(data.summary),
         field(data.summary, "Professional summary", (value) => update("summary", value)),
       )}
@@ -417,7 +420,7 @@ export default function ResumeLayout({
   const hasContact = contactKeys.some((key) => hasText(data[key]));
 
   return (
-    <article className={`${styles.paper} ${styles[variant]}`} aria-label={`${variant} resume`}>
+    <article className={`${styles.paper} ${styles[variant]} ${data.style ? styles.styled : ""}`} style={resumeStyleVariables(data.style)} aria-label={`${variant} resume`}>
       {(variant === "modern" || variant === "compact") ? (
         <>
           <aside className={styles.sidebar}>
