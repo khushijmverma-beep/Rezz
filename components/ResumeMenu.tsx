@@ -51,7 +51,7 @@ export default function ResumeMenu({
   const actions = [
     ["Open", onOpen],
     ["Rename", onRename],
-    ["Duplicate", onDuplicate],
+    ["Make a copy", onDuplicate],
     ["Download PDF", onDownloadPdf],
     ["Download text (.txt)", onDownloadText],
     ["Delete", onDelete],
@@ -96,4 +96,3 @@ export default function ResumeMenu({
     </div>
   );
 }
-

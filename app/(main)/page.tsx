@@ -23,6 +23,7 @@ import TemplateCard from "@/components/TemplateCard";
 import ResumeCard from "@/components/ResumeCard";
 import NewResumeModal from "@/components/NewResumeModal";
 import HomeToolbar from "@/components/HomeToolbar";
+import { nextCopyName } from "@/lib/nextCopyName";
 
 type SortBy = "updatedAt" | "createdAt" | "title";
 type ViewMode = "grid" | "list";
@@ -228,13 +229,17 @@ export default function Home() {
     if (!userId) return;
 
     try {
-      await createDraft(userId, {
-        title: `Copy of ${draft.title}`,
+      const resumeId = await createDraft(userId, {
+        title: nextCopyName(
+          draft.title,
+          drafts.map((existingDraft) => existingDraft.title),
+        ),
         templateId: draft.templateId,
         targetRole: draft.targetRole,
         data: draft.data,
       });
       await loadDrafts(userId);
+      router.push(`/resume/${resumeId}`);
     } catch (error) {
       console.error("Could not duplicate resume:", error);
       setPageError("Could not duplicate this resume. Please try again.");
