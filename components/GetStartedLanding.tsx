@@ -19,7 +19,7 @@ export default function GetStartedLanding() {
       <div className="flex gap-4">
         <Link
           href="/login"
-          className="rounded-lg bg-black px-8 py-3 font-medium text-white hover:bg-gray-800"
+          className="rounded-lg bg-black px-8 py-3 font-medium text-white! hover:bg-gray-800"
         >
           Log in
         </Link>
