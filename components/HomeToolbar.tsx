@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutGrid, List } from "lucide-react";
+import { ChevronDown, LayoutGrid, List } from "lucide-react";
 
 type SortBy = "updatedAt" | "createdAt" | "title";
 type ViewMode = "grid" | "list";
@@ -25,20 +25,28 @@ export default function HomeToolbar({
   const nextView = viewMode === "grid" ? "list" : "grid";
 
   return (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="flex flex-wrap items-center justify-end gap-3 text-sm">
       <label className="flex items-center gap-2 text-sm text-gray-600">
         Sort by
-        <select
-          value={sortBy}
-          onChange={(event) =>
-            onSortByChange(event.target.value as SortBy)
-          }
-          className="rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-900"
-        >
-          <option value="updatedAt">Last modified</option>
-          <option value="createdAt">Date created</option>
-          <option value="title">Title</option>
-        </select>
+        {/* appearance-none hides the browser's arrow so ours can sit inside the padding. */}
+        <span className="relative">
+          <select
+            value={sortBy}
+            onChange={(event) =>
+              onSortByChange(event.target.value as SortBy)
+            }
+            className="appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-9 text-gray-900"
+          >
+            <option value="updatedAt">Last modified</option>
+            <option value="createdAt">Date created</option>
+            <option value="title">Title</option>
+          </select>
+          <ChevronDown
+            size={16}
+            aria-hidden="true"
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+          />
+        </span>
       </label>
 
       <div className="flex items-center gap-2">

@@ -8,9 +8,11 @@ import { getPhoto } from "@/lib/profilePhoto";
 import Logo from "@/components/Logo";
 import ProfileMenu from "@/components/ProfileMenu";
 
+// With search props (Home), the bar sits inside .site-content and bleeds to its edges.
+// Without them (every other page), the layout renders it full width outside .site-content.
 type HomeTopBarProps = {
-  search: string;
-  onSearchChange: (value: string) => void;
+  search?: string;
+  onSearchChange?: (value: string) => void;
 };
 
 export default function HomeTopBar({
@@ -65,40 +67,50 @@ export default function HomeTopBar({
   const name = user?.displayName || user?.email?.split("@")[0] || "Account";
   const photo = savedPhoto && savedPhoto.uid === user?.uid ? savedPhoto.photo : null;
   const avatarSrc = photo ?? user?.photoURL ?? null;
+  const showSearch = onSearchChange !== undefined;
 
   return (
-    <header className="sticky top-0 z-20 -mx-4 mb-6 flex h-[68px] items-center gap-4 border-b border-gray-200 bg-white/95 px-4 backdrop-blur sm:-mx-6 sm:px-6">
+    <header
+      className={`sticky top-0 z-10 flex h-[68px] items-center gap-4 border-b border-gray-200 bg-white/95 px-4 backdrop-blur sm:px-6 ${
+        showSearch ? "-mx-4 sm:-mx-6" : ""
+      }`}
+    >
+      {/* Room for the sidebar's fixed hamburger button, which sits on top of this bar. */}
       <div className="w-10 shrink-0" aria-hidden="true" />
 
       <Logo size={28} className="shrink-0 text-gray-900" />
 
-      <div className="mx-auto flex w-full max-w-xl items-center">
-        <label className="flex h-10 w-full items-center gap-3 rounded-full bg-gray-100 px-4 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-gray-300">
-          <Search size={18} className="shrink-0 text-gray-500" />
-          <input
-            ref={searchRef}
-            type="search"
-            value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search resumes"
-            aria-label="Search resumes by title"
-            className="min-w-0 flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-500"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => {
-                onSearchChange("");
-                searchRef.current?.focus();
-              }}
-              aria-label="Clear search"
-              className="rounded-full p-1 text-gray-500 hover:bg-gray-200"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </label>
-      </div>
+      {showSearch ? (
+        <div className="mx-auto flex w-full max-w-xl items-center">
+          <label className="flex h-10 w-full items-center gap-3 rounded-full bg-gray-100 px-4 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-gray-300">
+            <Search size={18} className="shrink-0 text-gray-500" />
+            <input
+              ref={searchRef}
+              type="search"
+              value={search ?? ""}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Search resumes"
+              aria-label="Search resumes by title"
+              className="min-w-0 flex-1 bg-transparent text-sm text-gray-900 outline-none! placeholder:text-gray-500"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => {
+                  onSearchChange("");
+                  searchRef.current?.focus();
+                }}
+                aria-label="Clear search"
+                className="rounded-full p-1 text-gray-500 hover:bg-gray-200"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </label>
+        </div>
+      ) : (
+        <div className="flex-1" />
+      )}
 
       {user && (
         <div className="shrink-0">
