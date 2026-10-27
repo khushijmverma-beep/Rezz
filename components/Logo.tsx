@@ -8,8 +8,8 @@ type LogoProps = {
 
 const TEXT_VIEWBOX_WIDTH = 186;
 
-// The Z is cut out of the page, so the logo takes its color from the text color
-// and works on any background.
+// The Z is cut out of the page (evenodd), so the logo takes its color from the
+// text color and the background shows through the Z on light or dark surfaces.
 const PAGE =
   "M14 0 H47.5 V16.5 H64 V50 A14 14 0 0 1 50 64 H14 A14 14 0 0 1 0 50 V14 A14 14 0 0 1 14 0 Z " +
   "M50 0 V14 H64 Z";
@@ -34,8 +34,8 @@ export default function Logo({ size = 32, showText = true, className }: LogoProp
       aria-label="Rezz"
       className={className}
     >
-    <path d={PAGE} />
-    <path d={Z} fill="#fff" />
+      <path d={`${PAGE} ${Z}`} fillRule="evenodd" />
+      {showText && <path d={WORDMARK} />}
     </svg>
   );
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import SectionNav from "@/components/SectionNav";
 
 const h2 = "mt-0! mb-3! text-xl font-semibold text-black!";
 const h3 = "mt-0! mb-2! text-base font-semibold text-black!";
@@ -31,9 +31,24 @@ const examples = [
   },
 ];
 
+const sections = [
+  { id: "strong-bullets", label: "1. Write strong bullets" },
+  { id: "one-page", label: "2. Keep it to one page" },
+  { id: "ats-formatting", label: "3. ATS-safe formatting" },
+  { id: "keywords", label: "4. Be honest" },
+  { id: "how-rezz-scores", label: "How Rezz scores" },
+];
+
 export default function ResumeGuidePage() {
   return (
-    <div className="mx-auto max-w-3xl space-y-10 px-4 pb-12 pt-16">
+    <div className="mx-auto max-w-5xl px-4 pb-12 pt-16 lg:grid lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-10">
+      <aside className="mb-8 lg:mb-0">
+        <div className="lg:sticky lg:top-16">
+          <SectionNav sections={sections} />
+        </div>
+      </aside>
+
+      <div className="space-y-10">
       <header>
         <h1 className="mb-3!">Resume Guide</h1>
         <p className="mb-0! text-lg">
@@ -65,13 +80,13 @@ export default function ResumeGuidePage() {
           ))}
         </div>
         <p>
-          Don't use phrases like “responsible for,” “helped with,” and “worked on.” 
+          Don&apos;t use phrases like “responsible for,” “helped with,” and “worked on.”
         </p>
 
         <h3 className={h3}>Show the result</h3>
         <ul className={ul}>
-          <li>Use a number when you honestly have one(do not invent them): how many, how much, how often, and/or how fast.</li>
-          <li>Do not overuse numbers to the point where it makes your resume buzz number overkill. </li>
+          <li>Use a number when you honestly have one (do not invent them): how many, how much, how often, and/or how fast.</li>
+          <li>Do not overuse numbers; too many can make your resume harder to read.</li>
         </ul>
 
         <h3 className="mt-6! mb-3! text-base font-semibold text-black!">Before and after</h3>
@@ -112,7 +127,7 @@ export default function ResumeGuidePage() {
           <li><strong>Use Standard headings:</strong> Experience, Education, Skills, Projects.</li>
           <li><strong>Avoid using pictures to describe things</strong></li>
           <li><strong>Put contact details in the body,</strong> not in the page header or footer.</li>
-          <li><strong>Only use plain fonts</strong> such as Arial, Calibri, or Times New Roman, and simple round bullets.</li>
+          <li><strong>Only use plain fonts</strong> such as Arial or Times New Roman, and simple round bullets.</li>
           <li><strong>Use the same date style</strong> everywhere (for example, Jun 2023 – Aug 2024).</li>
           <li>Save as <strong>PDF</strong> unless the job post asks for Word.</li>
         </ul>
@@ -124,7 +139,7 @@ export default function ResumeGuidePage() {
         <ol className="list-decimal space-y-1.5 pl-5 text-gray-700">
             <li>It is normal for someone to not have the skills a job asks for.</li>
             <li>Whenever you build your resume, only put things you can genuinely talk about. </li>
-            <li>Don't lie about your skills. You will be cooked in the interview.</li>
+            <li>Don&apos;t overstate your skills. Interviewers will ask you to explain anything on your resume.</li>
 
         </ol>
      
@@ -164,15 +179,14 @@ export default function ResumeGuidePage() {
 
         <h3 className="mt-5! mb-2! text-base font-semibold text-black!">How to use them</h3>
         <ul className={ul}>
-          <li><strong>If low ATS score:</strong> fix the layout and check your keywords (sections 3 and 4).</li>
+          <li><strong>If low ATS score:</strong> fix the layout (section 3) and make sure skills from the job post that you genuinely have appear in your resume.</li>
           <li><strong>If low recruiter score:</strong> rewrite your bullets with verbs and results (section 1).</li>
         </ul>
         <p className="mt-3!">
           Treat the scores as estimated feedback, results on Rezz are not guaranteed to land you an interview.
         </p>
       </section>
-
-     
+      </div>
     </div>
   );
 }

@@ -14,10 +14,9 @@ import { app } from "@/lib/firebase";
 import { getPhoto, savePhoto, removePhoto, resizeImageToDataUrl } from "@/lib/profilePhoto";
 import { getSettings, saveSettings } from "@/lib/userSettings";
 import { deleteAllUserData } from "@/lib/userData";
-// adjust these three imports to where your project keeps them
-import { TEMPLATES } from "@/lib/templates"; // expects an array of { id: string; name: string }
-import { listDrafts } from "@/lib/drafts"; // (uid: string) => Promise<unknown[]>
-import { getAnalyses } from "@/lib/activity"; // (uid: string) => Promise<unknown[]>
+import { TEMPLATES } from "@/lib/templates";
+import { listDrafts } from "@/lib/drafts";
+import { getAnalyses } from "@/lib/activity";
 import Avatar from "@/components/Avatar";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB

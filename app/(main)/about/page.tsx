@@ -42,7 +42,7 @@ export default function AboutPage() {
       </section>
        <section className="about-section" aria-labelledby="aidisclaimer">
         <h2 id="aidisclaimer">AI Disclaimer</h2>
-        <p>Your resume text is sent to third party AI providers to sort and score. The AI will never rewrite your resume and users can always delete their data.</p>
+        <p>Your resume text is sent to third party AI providers to sort and score. The AI will never rewrite your resume. You can delete your resumes, analyses, and activity history at any time from Settings.</p>
       </section>
       <section className="about-section" aria-labelledby="project">
         <h2 id="project">Built to learn. Built to help.</h2>

@@ -79,7 +79,7 @@ export default function Sidebar() {
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <Link href="/dashboard" onClick={() => setOpen(false)} className="mb-5 block text-black!">
+        <Link href="/" onClick={() => setOpen(false)} className="mb-5 block text-black!">
           <Logo size={28} />
         </Link>
         <Link
