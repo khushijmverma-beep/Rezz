@@ -302,33 +302,36 @@ export default function ActivityPage() {
   ];
 
   return (
-    <main className="mx-auto max-w-7xl space-y-7 p-6 md:p-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+    <main className="mx-auto max-w-7xl space-y-7 px-6 pb-6 md:px-8 md:pb-8">
+      <div>
+        {/* Title on the left, buttons on the right, on one line. */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h1 className="m-0! text-3xl font-bold text-gray-900">
             Activity
           </h1>
-          <p className="mt-2 text-gray-500">
-            Track resume activity and improvements over time.
-          </p>
-        </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => setRefreshCount((count) => count + 1)}
-            className="rounded-lg border px-4 py-2 text-sm"
-          >
-            Refresh
-          </button>
+          {/* Same text size and padding as Home's Sort by dropdown. text-sm sits on
+              the wrapper because globals.css sets `font: inherit` on buttons. */}
+          <div className="flex gap-2 text-sm">
+            <button
+              onClick={() => setRefreshCount((count) => count + 1)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 hover:bg-gray-50"
+            >
+              Refresh
+            </button>
 
-          <button
-            onClick={() => exportCsv(analyses)}
-            disabled={analyses.length === 0}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
-          >
-            Export My Activity (CSV)
-          </button>
+            <button
+              onClick={() => exportCsv(analyses)}
+              disabled={analyses.length === 0}
+              className="rounded-lg bg-gray-800 px-3 py-2 text-white hover:bg-gray-700 disabled:opacity-50"
+            >
+              Export My Activity (CSV)
+            </button>
+          </div>
         </div>
+        <p className="mt-2 text-gray-500">
+          Track resume activity and improvements over time.
+        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

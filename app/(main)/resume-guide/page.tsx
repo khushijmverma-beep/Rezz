@@ -41,9 +41,9 @@ const sections = [
 
 export default function ResumeGuidePage() {
   return (
-    <div className="mx-auto max-w-5xl px-4 pb-12 pt-16 lg:grid lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-10">
+    <div className="mx-auto max-w-5xl px-4 pb-12 lg:grid lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-10">
       <aside className="mb-8 lg:mb-0">
-        <div className="lg:sticky lg:top-16">
+        <div className="lg:sticky lg:top-[92px]">
           <SectionNav sections={sections} />
         </div>
       </aside>

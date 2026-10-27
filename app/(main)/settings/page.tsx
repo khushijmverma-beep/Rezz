@@ -247,7 +247,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 px-4 pb-4 pt-16">
+    <div className="mx-auto max-w-2xl space-y-4 px-4 pb-4">
       <h1 className="text-xl font-semibold">Settings</h1>
 
       {/* Profile picture */}

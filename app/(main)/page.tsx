@@ -350,36 +350,35 @@ export default function Home() {
   if (!userId) return null;
 
   return (
-    <main className="pt-0">
+    <main className="home-page pt-0">
       <HomeTopBar
         search={search}
         onSearchChange={setSearch}
       />
 
-      <section className="-mx-4 bg-gray-50 px-4 py-5 sm:-mx-6 sm:px-6">
-        <h2 className="text-xl font-semibold">
-          Start a new resume
-        </h2>
-
+      <section className="-mx-4 bg-[#f1f3f4] px-4 py-5 sm:-mx-6 sm:px-6">
         <TemplateRow onSelect={openModal} />
       </section>
 
-      <section className="mt-8">
-        <h2 className="text-xl font-semibold">
-          Your resumes
-        </h2>
+      <section className="mt-5">
+        {/* Heading on the left, sort and view controls on the right, on one line. */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="m-0! text-base! font-medium">
+            Your resumes
+          </h2>
 
-        <HomeToolbar
-          sortBy={sortBy}
-          onSortByChange={(value) => {
-            setSortBy(value);
-            setDescending(value !== "title");
-          }}
-          descending={descending}
-          onToggleOrder={() => setDescending((value) => !value)}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-        />
+          <HomeToolbar
+            sortBy={sortBy}
+            onSortByChange={(value) => {
+              setSortBy(value);
+              setDescending(value !== "title");
+            }}
+            descending={descending}
+            onToggleOrder={() => setDescending((value) => !value)}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
+        </div>
 
         {pageError && (
           <p role="alert" className="mt-4 text-sm text-red-600">
@@ -388,14 +387,14 @@ export default function Home() {
         )}
 
         {loadingDrafts ? (
-          <p className="mt-6 text-sm text-gray-500">
+          <p className="mt-4 text-sm text-gray-500">
             Loading your resumes...
           </p>
         ) : sortedDrafts.length > 0 ? (
           <div
-            className={`mt-6 ${
+            className={`mt-4 ${
               viewMode === "grid"
-                ? "grid grid-cols-[repeat(auto-fill,200px)] gap-5"
+                ? "grid grid-cols-[repeat(auto-fill,200px)] justify-center-safe gap-5"
                 : "flex flex-col gap-3"
             }`}
           >

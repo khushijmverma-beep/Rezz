@@ -152,7 +152,7 @@ export default function ResumeDetailsPage() {
   }
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-4 px-4 pb-4 pt-16 lg:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="mx-auto grid max-w-6xl gap-4 px-4 pb-4 lg:grid-cols-[minmax(0,1fr)_380px]">
       <div className="min-w-0">
         {editing ? (
           <>
