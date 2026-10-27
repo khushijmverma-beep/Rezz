@@ -8,8 +8,9 @@ import ChangeTemplateDialog from "@/components/ChangeTemplateDialog";
 import DownloadMenu from "@/components/DownloadMenu";
 import PrintRoot from "@/components/templates/PrintRoot";
 import { logActivity, saveAnalysis, updateAnalysisFeedback } from "@/lib/activity";
-import { createDraft, getDraft, updateDraft, type Draft } from "@/lib/drafts";
+import { createDraft, getDraft, listDrafts, updateDraft, type Draft } from "@/lib/drafts";
 import { downloadPdf } from "@/lib/exportResume";
+import { nextCopyName } from "@/lib/nextCopyName";
 import { resumeToText } from "@/lib/resumeToText";
 import { getTemplate } from "@/lib/templates";
 import type { JobMatchResult } from "@/lib/types/job-match";
@@ -85,6 +86,8 @@ export default function ResumeDetailPage() {
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [lastAnalysisId, setLastAnalysisId] = useState<string | null>(null);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
 
   useEffect(() => {
     renderedDataRef.current = data;
@@ -324,6 +327,30 @@ export default function ResumeDetailPage() {
     };
   }, [saveChanges]);
 
+  // Same copy logic as Home's "Make a copy": createDraft + nextCopyName.
+  const handleMakeCopy = async () => {
+    if (!user || !draft) return;
+    setCopying(true);
+    setCopyError(null);
+    try {
+      // Flush pending edits so the copy has the latest title, template and data.
+      await saveChanges();
+      const existingTitles = (await listDrafts(user.uid)).map((d) => d.title);
+      const copyId = await createDraft(user.uid, {
+        title: nextCopyName(titleRef.current, existingTitles),
+        templateId: templateIdRef.current,
+        // Firestore rejects undefined fields, so only include targetRole if set.
+        ...(draft.targetRole !== undefined && { targetRole: draft.targetRole }),
+        data: dataRef.current,
+      });
+      router.push(`/resume/${copyId}`);
+    } catch (error) {
+      console.error("Could not copy resume:", error);
+      setCopyError("Couldn't make a copy. Please try again.");
+      setCopying(false);
+    }
+  };
+
   if (authLoading || (user && loading)) {
     return <LoadingSkeleton />;
   }
@@ -411,6 +438,14 @@ export default function ResumeDetailPage() {
             >
               Change template
             </button>
+            <button
+              type="button"
+              onClick={() => void handleMakeCopy()}
+              disabled={copying || saveStatus !== "saved"}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {copying ? "Copying..." : "Make a copy"}
+            </button>
             <DownloadMenu
               title={title}
               data={data}
@@ -419,6 +454,11 @@ export default function ResumeDetailPage() {
             />
           </div>
         </header>
+        {copyError && (
+          <p role="alert" className="mb-3 text-sm text-red-600">
+            {copyError}
+          </p>
+        )}
         {downloadError && (
           <p role="alert" className="mb-3 text-sm text-red-600">
             {downloadError}
