@@ -1,27 +1,54 @@
 // Shared types for job match. Used by the analyze-job-match route and
 // components/AnalyzePanel.tsx, so changes here affect both files.
+import type { ResumeData } from "@/lib/types/resume";
+export type CheckStatus = "pass" | "warn" | "fail";
+
+export type ScoreCheck = {
+    id: string;
+    label: string;
+    status: CheckStatus;
+    reason: string;
+    evidence?: string;
+    points: number;
+    maxPoints: number;
+}
+
+
+
+export type ScoreSection = {
+    score: number;
+    checks: ScoreCheck[]
+}
+
+export type TopFix = {
+    text: string;
+    gain: number 
+}
+
 export type JobMatchRequest = {
-    resumeText: string;
+    resumeText?: string; 
+    data?: ResumeData;  
+    templateId?: string;
     jobDescription: string;
 }
 
 export type SkillGap = {
   skill: string;
   importance: "required" | "preferred";
-  note: string; // why it matters or how to close the gap
-  jobDescriptionEvidence: string; // short phrase copied from the job description
+  note: string; 
+  jobDescriptionEvidence: string; 
 };
 
 export type SuggestedRewording = {
-    original: string; // original content
-    suggested: string; // suggested change
-    reason: string; // why rewording is better
+    original: string; 
+    suggested: string; 
+    reason: string; 
 }
 
 export type OverallFit = {
     matchScore: number; // 0-100
     rating: "strong" | "medium" | "weak";
-    summary: string; // 2-3 sentences
+    summary: string; 
 }
 
 export type Strength = {
@@ -52,4 +79,11 @@ export type JobMatchResult = {
     actionItems: string[];
     overallFit: OverallFit;
     emptyReasons: EmptyReasons;
+} & Partial<ScoreResult>;
+
+export type ScoreResult = {
+    ats: ScoreSection;
+    human: ScoreSection;
+    topFixes: TopFix[];
+    scorerVersion: string;
 };

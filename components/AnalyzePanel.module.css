@@ -471,3 +471,195 @@
   color: #858e9c;
   text-decoration: line-through;
 }
+
+
+.checkDetails {
+  margin-top: 12px;
+}
+
+.checkDetails > summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.checkList {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.checkRow {
+  border-top: 1px solid rgba(127, 127, 127, 0.2);
+  padding-top: 8px;
+}
+
+.checkHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkLabel {
+  flex: 1;
+  font-weight: 600;
+}
+
+.checkPoints {
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+.statusBadge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.statusPass {
+  background: #e6f4ea;
+  color: #1e6b34;
+}
+
+.statusWarn {
+  background: #fef4e0;
+  color: #8a5a00;
+}
+
+.statusFail {
+  background: #fde8e8;
+  color: #9b1c1c;
+}
+
+.fixList {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.modal {
+  width: min(960px, 100%);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  background: var(--background, #fff);
+  color: var(--foreground, #111);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modal > .modalHeader {
+  padding: 16px 20px 8px;
+}
+
+.tabList {
+  display: flex;
+  gap: 4px;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+  overflow-x: auto;
+}
+
+.tab {
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  opacity: 0.65;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tabActive {
+  opacity: 1;
+  border-bottom-color: currentColor;
+}
+
+.tabPanel {
+  padding: 16px 20px 24px;
+  overflow-y: auto;
+}
+
+.scoreTiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.scoreTile {
+  padding: 12px 16px;
+  border: 1px solid rgba(127, 127, 127, 0.25);
+  border-radius: 8px;
+}
+
+.modalHeader > button {
+  width: auto;
+  flex-shrink: 0;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.ratingRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ratingButton {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid rgba(127, 127, 127, 0.35);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ratingActive {
+  border-color: currentColor;
+  font-weight: 700;
+}
+
+.feedbackNote {
+  width: 100%;
+  min-height: 60px;
+  margin-bottom: 8px;
+  padding: 8px;
+  border: 1px solid rgba(127, 127, 127, 0.35);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+}

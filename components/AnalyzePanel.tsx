@@ -1,12 +1,25 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import type { JobMatchResult } from "@/lib/types/job-match";
+import type { CheckStatus, JobMatchResult, ScoreSection } from "@/lib/types/job-match";
+import type { ResumeData } from "@/lib/types/resume";
 import styles from "./AnalyzePanel.module.css";
+import ReportExpanded from "./ReportExpanded";
+
+export type UserRating = "too_high" | "about_right" | "too_low";
+
+const RATING_OPTIONS: { value: UserRating; label: string }[] = [
+  { value: "too_high", label: "Too high" },
+  { value: "about_right", label: "About right" },
+  { value: "too_low", label: "Too low" },
+];
 
 type AnalyzePanelProps = {
-  resumeText: string;
-  onResult?: (result: JobMatchResult) => void;
+  resumeText?: string; // old way, kept until Juan passes data
+  data?: ResumeData;
+  templateId?: string;
+  onResult?: (result: JobMatchResult, jobDescription: string) => void;
+  onFeedback?: (rating: UserRating, note: string) => Promise<void>;
 };
 
 const CATEGORY_LABELS: { key: keyof JobMatchResult["categoryScores"]; label: string }[] = [
@@ -24,15 +37,139 @@ function ratingClass(score: number): string {
   return styles.weak;
 }
 
-export default function AnalyzePanel({ resumeText, onResult }: AnalyzePanelProps) {
+const STATUS_LABEL: Record<CheckStatus, string> = { pass: "Pass", warn: "Warning", fail: "Fail" };
+const STATUS_CLASS: Record<CheckStatus, string> = {
+  pass: styles.statusPass,
+  warn: styles.statusWarn,
+  fail: styles.statusFail,
+};
+
+function ScoreView({ title, section }: { title: string; section: ScoreSection }) {
+  const score = clampScore(section.score);
+  const passed = section.checks.filter((c) => c.status === "pass").length;
+
+  return (
+    <section className={styles.scoreCard} aria-label={title}>
+      <div className={styles.scoreHeader}>
+        <span className={styles.fitLabel}>{title}</span>
+      </div>
+      <p className={styles.scoreNumber}>
+        {score}
+        <span>/100</span>
+      </p>
+      <div
+        className={styles.scoreTrack}
+        role="progressbar"
+        aria-label={title}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={score}
+      >
+        <div className={`${styles.scoreProgress} ${ratingClass(score)}`} style={{ width: `${score}%` }} />
+      </div>
+      <details className={styles.checkDetails}>
+        <summary>
+          {passed} of {section.checks.length} checks passed
+        </summary>
+        <ul className={styles.checkList}>
+          {section.checks.map((check) => (
+            <li key={check.id} className={styles.checkRow}>
+              <div className={styles.checkHeader}>
+                <span className={`${styles.statusBadge} ${STATUS_CLASS[check.status]}`}>
+                  {STATUS_LABEL[check.status]}
+                </span>
+                <span className={styles.checkLabel}>{check.label}</span>
+                {check.maxPoints > 0 && (
+                  <span className={styles.checkPoints}>
+                    {check.points}/{check.maxPoints}
+                  </span>
+                )}
+              </div>
+              <p className={styles.detailBody}>{check.reason}</p>
+              {check.evidence && <blockquote className={styles.quote}>{check.evidence}</blockquote>}
+            </li>
+          ))}
+        </ul>
+      </details>
+    </section>
+  );
+}
+
+function FeedbackBox({ onSubmit }: { onSubmit: (rating: UserRating, note: string) => Promise<void> }) {
+  const [rating, setRating] = useState<UserRating | null>(null);
+  const [note, setNote] = useState("");
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  async function save() {
+    if (!rating) return;
+    setStatus("saving");
+    try {
+      await onSubmit(rating, note);
+      setStatus("saved");
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  if (status === "saved") {
+    return <p className={styles.emptyNote}>Thanks, your feedback was saved.</p>;
+  }
+
+  return (
+    <section className={styles.resultSection} aria-label="Score feedback">
+      <h3 className={styles.sectionHeading}>Was this fair?</h3>
+      <div className={styles.ratingRow} role="group" aria-label="Rate these scores">
+        {RATING_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={rating === option.value}
+            className={`${styles.ratingButton} ${rating === option.value ? styles.ratingActive : ""}`}
+            onClick={() => setRating(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      <textarea
+        className={styles.feedbackNote}
+        placeholder="Optional: what felt off?"
+        value={note}
+        maxLength={500}
+        onChange={(event) => setNote(event.target.value)}
+      />
+      <button
+        type="button"
+        className={styles.analyzeButton}
+        disabled={!rating || status === "saving"}
+        onClick={() => void save()}
+      >
+        {status === "saving" ? "Saving..." : "Send feedback"}
+      </button>
+      {status === "error" && (
+        <p className={styles.errorMessage}>Couldn't save your feedback. Please try again.</p>
+      )}
+    </section>
+  );
+}
+
+export default function AnalyzePanel({
+  resumeText,
+  data,
+  templateId,
+  onResult,
+  onFeedback,
+}: AnalyzePanelProps) {
   const [jobDescription, setJobDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<JobMatchResult | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
+  const [expanded, setExpanded] = useState(false);
 
   async function runAnalysis() {
+    setExpanded(false);
     setIsLoading(true);
     setError(null);
     setResult(null);
@@ -43,34 +180,32 @@ export default function AnalyzePanel({ resumeText, onResult }: AnalyzePanelProps
       const response = await fetch("/api/analyze-job-match", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resumeText, jobDescription }),
+        body: JSON.stringify({ resumeText, data, templateId, jobDescription }),
       });
 
-      const data: unknown = await response.json();
+      const body: unknown = await response.json();
 
       if (!response.ok) {
         if (response.status === 503 || response.status === 429) {
-          setError(
-            "The AI service is busy right now. Please try again in a minute."
-          );
+          setError("The AI service is busy right now. Please try again in a minute.");
           return;
         }
 
         const message =
-          typeof data === "object" &&
-            data !== null &&
-            "error" in data &&
-            typeof (data as { error: unknown }).error === "string"
-            ? (data as { error: string }).error
+          typeof body === "object" &&
+          body !== null &&
+          "error" in body &&
+          typeof (body as { error: unknown }).error === "string"
+            ? (body as { error: string }).error
             : "Analysis failed";
         setError(message);
         return;
       }
 
-      const matchResult = data as JobMatchResult;
+      const matchResult = body as JobMatchResult;
       setResult(matchResult);
       try {
-        onResult?.(matchResult);
+        onResult?.(matchResult, jobDescription);
       } catch (err) {
         console.error("onResult callback failed", err);
       }
@@ -87,10 +222,10 @@ export default function AnalyzePanel({ resumeText, onResult }: AnalyzePanelProps
   }
 
   function handleEdit() {
+    setExpanded(false);
     setResult(null);
     setError(null);
   }
-
 
   async function handleCopy(text: string, index: number) {
     try {
@@ -102,7 +237,6 @@ export default function AnalyzePanel({ resumeText, onResult }: AnalyzePanelProps
     }
   }
 
-
   function toggleItem(index: number) {
     setCheckedItems((prev) => {
       const next = new Set(prev);
@@ -111,7 +245,6 @@ export default function AnalyzePanel({ resumeText, onResult }: AnalyzePanelProps
       return next;
     });
   }
-
 
   if (result) {
     const score = Math.max(0, Math.min(100, result.overallFit.matchScore));
@@ -128,6 +261,7 @@ export default function AnalyzePanel({ resumeText, onResult }: AnalyzePanelProps
     const rewordings = result.suggestedRewordings ?? [];
     const actionItems = result.actionItems ?? [];
     const emptyReasons = result.emptyReasons ?? {};
+    const topFixes = result.topFixes ?? [];
 
     const importanceBySkill = new Map(skillGaps.map((gap) => [gap.skill, gap.importance]));
     const requiredGaps = skillGaps.filter((gap) => gap.importance === "required");
@@ -138,8 +272,9 @@ export default function AnalyzePanel({ resumeText, onResult }: AnalyzePanelProps
         <p className={styles.detailTitle}>
           {gap.skill}{" "}
           <span
-            className={`${styles.importanceBadge} ${gap.importance === "required" ? styles.required : styles.preferred
-              }`}
+            className={`${styles.importanceBadge} ${
+              gap.importance === "required" ? styles.required : styles.preferred
+            }`}
           >
             {gap.importance}
           </span>
@@ -154,64 +289,89 @@ export default function AnalyzePanel({ resumeText, onResult }: AnalyzePanelProps
     return (
       <section className={styles.panel} aria-live="polite">
         <div className={styles.resultView}>
-          <h2 className={styles.heading}>Result</h2>
+          <div className={styles.modalHeader}>
+            <h2 className={styles.heading}>Result</h2>
+            <button type="button" className={styles.secondaryButton} onClick={() => setExpanded(true)}>
+              Expand
+            </button>
+          </div>
+          {expanded && <ReportExpanded result={result} onClose={() => setExpanded(false)} />}
           <div className={styles.resultContent}>
-            <section className={styles.scoreCard} aria-label="Overall fit score">
-              <div className={styles.scoreHeader}>
-                <span className={styles.fitLabel}>Overall fit</span>
-                <span className={`${styles.rating} ${scoreClass}`}>
-                  {result.overallFit.rating}
-                </span>
-              </div>
-              <p className={styles.scoreNumber}>
-                {score}
-                <span>/100</span>
-              </p>
-              <div
-                className={styles.scoreTrack}
-                role="progressbar"
-                aria-label="Resume match score"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={score}
-              >
-                <div
-                  className={`${styles.scoreProgress} ${scoreClass}`}
-                  style={{ width: `${score}%` }}
-                />
-              </div>
-              <p className={styles.fitText}>{result.overallFit.summary}</p>
-            </section>
-         
-            <section className={styles.resultSection}>
-              <h3 className={styles.sectionHeading}>Score breakdown</h3>
-              <ul className={styles.breakdownList}>
-                {CATEGORY_LABELS.map(({ key, label }) => {
-                  const value = clampScore(result.categoryScores[key]);
-                  return (
-                    <li key={key} className={styles.breakdownRow}>
-                      <span className={styles.breakdownLabel}>{label}</span>
-                      <div
-                        className={styles.miniTrack}
-                        role="progressbar"
-                        aria-label={`${label} score`}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        aria-valuenow={value}
-                      >
-                        <div
-                          className={`${styles.scoreProgress} ${ratingClass(value)}`}
-                          style={{ width: `${value}%` }}
-                        />
-                      </div>
-                      <span className={styles.breakdownValue}>{value}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
+            {result.ats && result.human ? (
+              <>
+                <ScoreView title="ATS score" section={result.ats} />
+                <ScoreView title="Recruiter score" section={result.human} />
+                {onFeedback && <FeedbackBox onSubmit={onFeedback} />}
+                {topFixes.length > 0 && (
+                  <section className={styles.resultSection}>
+                    <h3 className={styles.sectionHeading}>Top fixes</h3>
+                    <ol className={styles.fixList}>
+                      {topFixes.map((fix) => (
+                        <li key={fix.text}>{fix.text}</li>
+                      ))}
+                    </ol>
+                  </section>
+                )}
+              </>
+            ) : (
+              <>
+                <section className={styles.scoreCard} aria-label="Overall fit score">
+                  <div className={styles.scoreHeader}>
+                    <span className={styles.fitLabel}>Overall fit</span>
+                    <span className={`${styles.rating} ${scoreClass}`}>
+                      {result.overallFit.rating}
+                    </span>
+                  </div>
+                  <p className={styles.scoreNumber}>
+                    {score}
+                    <span>/100</span>
+                  </p>
+                  <div
+                    className={styles.scoreTrack}
+                    role="progressbar"
+                    aria-label="Resume match score"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={score}
+                  >
+                    <div
+                      className={`${styles.scoreProgress} ${scoreClass}`}
+                      style={{ width: `${score}%` }}
+                    />
+                  </div>
+                  <p className={styles.fitText}>{result.overallFit.summary}</p>
+                </section>
 
-           
+                <section className={styles.resultSection}>
+                  <h3 className={styles.sectionHeading}>Score breakdown</h3>
+                  <ul className={styles.breakdownList}>
+                    {CATEGORY_LABELS.map(({ key, label }) => {
+                      const value = clampScore(result.categoryScores[key]);
+                      return (
+                        <li key={key} className={styles.breakdownRow}>
+                          <span className={styles.breakdownLabel}>{label}</span>
+                          <div
+                            className={styles.miniTrack}
+                            role="progressbar"
+                            aria-label={`${label} score`}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={value}
+                          >
+                            <div
+                              className={`${styles.scoreProgress} ${ratingClass(value)}`}
+                              style={{ width: `${value}%` }}
+                            />
+                          </div>
+                          <span className={styles.breakdownValue}>{value}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              </>
+            )}
+
             <section className={styles.resultSection}>
               <h3 className={styles.sectionHeading}>Keywords</h3>
               {matchedKeywords.length === 0 && missingKeywords.length === 0 ? (
@@ -305,23 +465,20 @@ export default function AnalyzePanel({ resumeText, onResult }: AnalyzePanelProps
               {rewordings.length === 0 ? (
                 <p className={styles.emptyNote}>
                   {emptyReasons.suggestedRewordings ??
-                    "Your resume lines already fit this posting well."}
+                    "No safe rewordings found for this job description."}
                 </p>
               ) : (
                 <ul className={styles.detailList}>
                   {rewordings.map((item, index) => (
                     <li key={item.original} className={styles.detailItem}>
                       <p className={styles.detailBody}>
-                        <span className={styles.rewordLabel}>Original:</span>{" "}
-                        {item.original}
+                        <span className={styles.rewordLabel}>Original:</span> {item.original}
                       </p>
                       <p className={styles.detailBody}>
-                        <span className={styles.rewordLabel}>Suggested:</span>{" "}
-                        {item.suggested}
+                        <span className={styles.rewordLabel}>Suggested:</span> {item.suggested}
                       </p>
                       <p className={styles.detailBody}>
-                        <span className={styles.rewordLabel}>Reason:</span>{" "}
-                        {item.reason}
+                        <span className={styles.rewordLabel}>Reason:</span> {item.reason}
                       </p>
                       <button
                         type="button"
@@ -358,11 +515,7 @@ export default function AnalyzePanel({ resumeText, onResult }: AnalyzePanelProps
               </section>
             )}
           </div>
-          <button
-            className={styles.secondaryButton}
-            type="button"
-            onClick={handleEdit}
-          >
+          <button className={styles.secondaryButton} type="button" onClick={handleEdit}>
             Edit job description
           </button>
         </div>
@@ -415,11 +568,7 @@ export default function AnalyzePanel({ resumeText, onResult }: AnalyzePanelProps
           required
           disabled={isLoading}
         />
-        <button
-          className={styles.analyzeButton}
-          type="submit"
-          disabled={isLoading}
-        >
+        <button className={styles.analyzeButton} type="submit" disabled={isLoading}>
           {isLoading ? "Analyzing..." : "Analyze"}
         </button>
       </form>

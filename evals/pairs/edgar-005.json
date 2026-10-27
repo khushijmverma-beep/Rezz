@@ -1,0 +1,84 @@
+{
+  "id": "edgar-004",
+  "resumeText": "Test Candidate\nTX | 555-010-0100 | candidate@example.com | linkedin.com/in/test-candidate | github.com/test-candidate\n\nEducation\nState University, TX\nBachelor of Science in Computer Science, GPA: 3.4, Expected May 2028\nRelevant Coursework: Data Structures & Algorithms, Database Systems, Machine Learning, Software Engineering, C/C++ Programming in a UNIX Environment\n\nTechnical Skills\nLanguages: Java, Python, SQL, JavaScript, TypeScript\nFrameworks & Libraries: Spring Boot, Spring Security, JPA/Hibernate, FastAPI, Next.js, React, Pandas, Scikit-learn\nDatabases: PostgreSQL, MySQL, SQLite\nDeveloper Tools & DevOps: Git, GitHub Actions, Docker, Linux, pytest, Railway, Vercel\nConcepts: Object-Oriented Design, REST APIs, Unit Testing, Agile/Scrum\nAI/LLM: Gemini API, Prompt engineering, Structured output validation\nWork Auth & Languages: U.S. Citizen, no sponsorship required | English, Spanish (fluent)\n\nExperience\nUniversity Developer Club, TX\nBackend Developer, Sep 2026 - Present\n- Built Next.js/TypeScript API routes that sort pasted text and uploaded PDF/.txt documents into 14 profile fields, plus a matching endpoint that scores relevance and missing keywords.\n- Validated Gemini output with TypeScript type guards, dropping any value the model invented or reworded.\n- Owned the shared data contract (TypeScript types), coordinating field changes with teammates via PRs.\n- Built a React chat panel that calls an extraction API and maps each status code to a user-facing message.\n- Added an offline mock mode so 2 teammates could build frontend features without using API quota.\n\nLogistics Company, TX\nAdministrative Assistant, Sep 2022 - Jul 2023\n- Managed freight documentation and rate confirmations, and supported dispatch across daily shipping workflows.\n\nProjects\nSavings Tracker | Python, FastAPI, React, PostgreSQL, SQLAlchemy, Docker, JWT\n- Built a full-stack savings tracker with a summary API computing per-habit totals and longest streaks.\n- Secured endpoints with JWT auth, bcrypt hashing, and row-level ownership checks for user data isolation.\n- Set up GitHub Actions CI running automated tests on every push; Dockerized and deployed on Railway/Vercel.\n- Wrote 17 pytest tests for auth and business logic, catching a duplicate-entry bug corrupting streak calculations.\n\nApplication Tracker | Java, Spring Boot, Spring Security, JPA/Hibernate, PostgreSQL, Gemini API\n- Built a Spring Boot REST API with 8 endpoints in a layered controller/service/repository design.\n- Integrated the Gemini API to score documents against descriptions, prompting for structured JSON output.\n- Implemented stateless JWT auth in Spring Security with a custom per-request token filter and BCrypt hashing.\n- Enforced per-user data isolation by scoping all reads and writes to the authenticated user.\n\nCredit Risk Model | Python, Scikit-learn, Pandas\n- Cut 122 features to 76 by missingness across 300K+ records, with per-column imputation and missing flags.\n- Trained Logistic Regression (ROC-AUC 0.749) and Random Forest (0.741) models, using class weights for an 8% default rate.\n- Selected an F1-optimal threshold of 0.671 (24.1% precision, about 3x the 8% base rate; 39.7% recall).",
+  "jobDescription": "About this role:\nWells Fargo is seeking aspiring Data Engineers to join the 2027 Technology Internship Program.\n\nProgram Overview:\nThe Wells Fargo Technology Internship Program provides participants with a 10-week experience designed to immerse students in enterprise-scale data engineering, platform development, and modern software engineering practices. Participants will help build and maintain data products, pipelines, and technology foundations that power critical business processes, applications, analytics, and AI capabilities across Wells Fargo.\n\nIn this role, your responsibilities as a Data Engineering Intern may include:\nDesign, develop, test, and maintain scalable data pipelines, integration frameworks, and data products supporting enterprise platforms\nBuild and enhance reusable APIs, services, and data solutions that enable trusted and efficient consumption of data across applications and business functions\nApply software engineering fundamentals including testing, code reviews, version control, automation, CI/CD, and observability practices\nDevelop solutions to ingest, transform, validate, and distribute large volumes of structured and unstructured data\nContribute to cloud-based and distributed computing platforms supporting enterprise-scale data workloads\nLeverage enterprise-approved generative AI tools (e.g., coding agents) and enterprise AI platforms to accelerate engineering activities\nApply prompt engineering techniques to improve the quality, reliability, and efficiency of AI-assisted outputs while adhering to data handling, confidentiality, and governance standards\nSupport development of intelligent data capabilities such as anomaly detection, automated quality monitoring, metadata enrichment, and predictive insights\nSupport development and maintenance of enterprise data models, metadata management processes, and data architecture standards\nImplement data quality controls, monitoring solutions, lineage capabilities, and validation frameworks to improve trust and reliability\n\nRequired Qualifications:\n6+ months of work experience, or equivalent demonstrated through one or a combination of the following: work experience, training, military experience, education\n\nDesired Qualifications:\nCurrently pursuing a bachelor's degree in Data Science, Computer Science, Computer Engineering, or a related STEM field with an expected graduation between December 2027 and June 2028\nFoundational knowledge of Python, SQL, data structures, algorithms, and object-oriented programming concepts\nFamiliarity with software development lifecycle practices including version control, testing, deployment, and CI/CD pipelines\nDemonstrated exposure to AI tools or AI-assisted engineering workflows (e.g., Copilot, code assistants, enterprise AI platforms)\nFamiliarity with prompt engineering concepts, responsible AI principles, and AI governance practices\nExperience or coursework involving machine learning, artificial intelligence, statistical modeling, or advanced analytics concepts\nExposure to data engineering concepts including data pipelines, distributed computing, data modeling, or large-scale data environments\nUnderstanding of cloud technologies, APIs, data services, and modern application architectures\nExperience working with structured and unstructured data through coursework, research projects, internships, or other relevant experiences\nBasic understanding of data governance, data quality, metadata management, or regulatory compliance principles\nStrong problem solving and interpersonal skills, including the ability to articulate technical challenges and recommend solutions\nExposure to data visualization and reporting tools such as Tableau, Power BI, Grafana, SAS, or similar technologies\nDemonstrated ability to work effectively both independently and within collaborative, fast-paced environments\nInvolvement in extracurricular enrichment activities through one or more of the following: volunteerism, student organization involvement, study abroad program(s), leadership position(s), non-profit involvement\n\nJob Expectations:\nThis position is not eligible for Visa sponsorship",
+  "templateId": "simple",
+  "humanAtsScore": 3,
+  "humanRecruiterScore": 3,
+  "notes": "Fits the basics (Python, SQL, CI/CD, AI tools, ML, grad window); missing cloud, data pipelines, governance and metadata, and visualization tools.",
+  "resumeData": {
+    "firstName": "Test",
+    "lastName": "Candidate",
+    "email": "candidate@example.com",
+    "phone": "555-010-0100",
+    "location": "TX",
+    "linkedin": "linkedin.com/in/test-candidate",
+    "github": "github.com/test-candidate",
+    "website": "",
+    "summary": "",
+    "experience": [
+      {
+        "company": "University Developer Club",
+        "title": "Backend Developer",
+        "location": "TX",
+        "startDate": "Sep 2026",
+        "endDate": "Present",
+        "bullets": [
+          "Built Next.js/TypeScript API routes that sort pasted text and uploaded PDF/.txt documents into 14 profile fields, plus a matching endpoint that scores relevance and missing keywords.",
+          "Validated Gemini output with TypeScript type guards, dropping any value the model invented or reworded.",
+          "Owned the shared data contract (TypeScript types), coordinating field changes with teammates via PRs.",
+          "Built a React chat panel that calls an extraction API and maps each status code to a user-facing message.",
+          "Added an offline mock mode so 2 teammates could build frontend features without using API quota."
+        ]
+      },
+      {
+        "company": "Logistics Company",
+        "title": "Administrative Assistant",
+        "location": "TX",
+        "startDate": "Sep 2022",
+        "endDate": "Jul 2023",
+        "bullets": [
+          "Managed freight documentation and rate confirmations, and supported dispatch across daily shipping workflows."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "State University",
+        "degree": "Bachelor of Science",
+        "field": "Computer Science",
+        "startDate": "",
+        "endDate": "May 2028",
+        "gpa": "3.4"
+      }
+    ],
+    "skills": [
+      "Java", "Python", "SQL", "JavaScript", "TypeScript",
+      "Spring Boot", "Spring Security", "JPA/Hibernate", "FastAPI", "Next.js", "React", "Pandas", "Scikit-learn",
+      "PostgreSQL", "MySQL", "SQLite",
+      "Git", "GitHub Actions", "Docker", "Linux", "pytest", "Railway", "Vercel",
+      "Object-Oriented Design", "REST APIs", "Unit Testing", "Agile/Scrum",
+      "Gemini API", "Prompt engineering", "Structured output validation"
+    ],
+    "projects": [
+      {
+        "name": "Savings Tracker",
+        "link": "",
+        "description": "Python, FastAPI, React, PostgreSQL, SQLAlchemy, Docker, JWT. Built a full-stack savings tracker with a summary API computing per-habit totals and longest streaks. Secured endpoints with JWT auth, bcrypt hashing, and row-level ownership checks for user data isolation. Set up GitHub Actions CI running automated tests on every push; Dockerized and deployed on Railway/Vercel. Wrote 17 pytest tests for auth and business logic, catching a duplicate-entry bug corrupting streak calculations."
+      },
+      {
+        "name": "Application Tracker",
+        "link": "",
+        "description": "Java, Spring Boot, Spring Security, JPA/Hibernate, PostgreSQL, Gemini API. Built a Spring Boot REST API with 8 endpoints in a layered controller/service/repository design. Integrated the Gemini API to score documents against descriptions, prompting for structured JSON output. Implemented stateless JWT auth in Spring Security with a custom per-request token filter and BCrypt hashing. Enforced per-user data isolation by scoping all reads and writes to the authenticated user."
+      },
+      {
+        "name": "Credit Risk Model",
+        "link": "",
+        "description": "Python, Scikit-learn, Pandas. Cut 122 features to 76 by missingness across 300K+ records, with per-column imputation and missing flags. Trained Logistic Regression (ROC-AUC 0.749) and Random Forest (0.741) models, using class weights for an 8% default rate. Selected an F1-optimal threshold of 0.671 (24.1% precision, about 3x the 8% base rate; 39.7% recall)."
+      }
+    ],
+    "awards": [],
+    "certifications": [],
+    "languages": ["English", "Spanish"]
+  }
+}

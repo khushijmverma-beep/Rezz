@@ -1,0 +1,84 @@
+{
+  "id": "edgar-003",
+  "resumeText": "Test Candidate\nTX | 555-010-0100 | candidate@example.com | linkedin.com/in/test-candidate | github.com/test-candidate\n\nEducation\nState University, TX\nBachelor of Science in Computer Science, GPA: 3.4, Expected May 2028\nRelevant Coursework: Data Structures & Algorithms, Database Systems, Machine Learning, Software Engineering, C/C++ Programming in a UNIX Environment\n\nTechnical Skills\nLanguages: Java, Python, SQL, JavaScript, TypeScript\nFrameworks & Libraries: Spring Boot, Spring Security, JPA/Hibernate, FastAPI, Next.js, React, Pandas, Scikit-learn\nDatabases: PostgreSQL, MySQL, SQLite\nDeveloper Tools & DevOps: Git, GitHub Actions, Docker, Linux, pytest, Railway, Vercel\nConcepts: Object-Oriented Design, REST APIs, Unit Testing, Agile/Scrum\nAI/LLM: Gemini API, Prompt engineering, Structured output validation\nWork Auth & Languages: U.S. Citizen, no sponsorship required | English, Spanish (fluent)\n\nExperience\nUniversity Developer Club, TX\nBackend Developer, Sep 2026 - Present\n- Built Next.js/TypeScript API routes that sort pasted text and uploaded PDF/.txt documents into 14 profile fields, plus a matching endpoint that scores relevance and missing keywords.\n- Validated Gemini output with TypeScript type guards, dropping any value the model invented or reworded.\n- Owned the shared data contract (TypeScript types), coordinating field changes with teammates via PRs.\n- Built a React chat panel that calls an extraction API and maps each status code to a user-facing message.\n- Added an offline mock mode so 2 teammates could build frontend features without using API quota.\n\nLogistics Company, TX\nAdministrative Assistant, Sep 2022 - Jul 2023\n- Managed freight documentation and rate confirmations, and supported dispatch across daily shipping workflows.\n\nProjects\nSavings Tracker | Python, FastAPI, React, PostgreSQL, SQLAlchemy, Docker, JWT\n- Built a full-stack savings tracker with a summary API computing per-habit totals and longest streaks.\n- Secured endpoints with JWT auth, bcrypt hashing, and row-level ownership checks for user data isolation.\n- Set up GitHub Actions CI running automated tests on every push; Dockerized and deployed on Railway/Vercel.\n- Wrote 17 pytest tests for auth and business logic, catching a duplicate-entry bug corrupting streak calculations.\n\nApplication Tracker | Java, Spring Boot, Spring Security, JPA/Hibernate, PostgreSQL, Gemini API\n- Built a Spring Boot REST API with 8 endpoints in a layered controller/service/repository design.\n- Integrated the Gemini API to score documents against descriptions, prompting for structured JSON output.\n- Implemented stateless JWT auth in Spring Security with a custom per-request token filter and BCrypt hashing.\n- Enforced per-user data isolation by scoping all reads and writes to the authenticated user.\n\nCredit Risk Model | Python, Scikit-learn, Pandas\n- Cut 122 features to 76 by missingness across 300K+ records, with per-column imputation and missing flags.\n- Trained Logistic Regression (ROC-AUC 0.749) and Random Forest (0.741) models, using class weights for an 8% default rate.\n- Selected an F1-optimal threshold of 0.671 (24.1% precision, about 3x the 8% base rate; 39.7% recall).",
+  "jobDescription": "Who is Trace3?\nTrace3 is a leading Transformative IT Authority, providing unique technology solutions and consulting services to our clients.\n\nJOB SUMMARY:\nUnder the general direction of the Senior Director, Research & Development, the Innovation R&D Lab Intern supports the Innovation R&D Lab by building and maintaining Amazon Web Services (AWS) cloud environments that support incubator prototypes, proofs of concept, minimum viable products (MVPs), and technical reviews of emerging solutions. The intern works alongside R&D engineers, building from existing designs and templates, and develops practical cloud engineering skills on the job with training and guidance. Prior professional AWS experience is not required.\n\nWHAT YOU CAN EXPECT TO LEARN:\nBuild and configure AWS environments from engineer-provided designs, templates, and checklists to support prototypes, proofs of concept, and MVPs\nLearn core AWS lab standards, such as compute, storage, networking, and identity and access management, with training and guidance from R&D engineers\nDeploy vendor and open-source technologies under evaluation, including security, identity, data, and AI tools, in lab environments for technical review\nPrepare test environments, sample data, and basic validation scripts for proofs of concept and technical reviews, and capture the results\nAutomate small, well-scoped lab tasks with scripting, and learn infrastructure as code tools alongside engineers\nDocument build steps, configurations, and lessons learned, with R&D engineers reviewing and owning the final runbooks\nTrack and report resource usage and cost for assigned environments, and shut down or remove resources that are no longer needed\nTroubleshoot environment issues, and escalate blockers promptly to R&D engineers\nComplete a capstone project near the end of the internship, such as a documented test environment for a technology under evaluation, and present it to the team\n\nELIGIBILITY AND PREFERRED SKILLS:\nEnrollment in the Junior or Senior year of an undergraduate program at an accredited college or university\nCandidates should be pursuing a field of study applicable to the Innovation R&D Lab internship, such as computer science, information technology, cybersecurity, cloud computing, or a related field\nFundamental understanding of cloud computing concepts, such as virtualization, storage, networking, and the shared responsibility model; coursework or personal projects are acceptable\nBasic familiarity with Linux, the command line, and at least one scripting language, such as Python, Bash, or PowerShell\nHands-on AWS experience or a foundational certification, such as AWS Certified Cloud Practitioner, is ideal but not required; training will be provided\nFamiliarity with Git and infrastructure as code tools is a plus\nInterest in cybersecurity, identity, AI, or agentic technologies is a plus\nExcellent technical documentation and artifact creation skills\nExcellent oral and written communication skills\nCumulative grade point average (GPA) of 3.0 or better\nAcademic or professional/internship experience working in a professional setting is a plus\nAbility to work independently on assigned tasks and accepts direction on given assignments\nWillingness to learn new technologies on the job and to ask questions early\nEnthusiasm for technical problem solving with attention to detail and strong communication skills",
+  "templateId": "simple",
+  "humanAtsScore": 3,
+  "humanRecruiterScore": 3,
+  "notes": "Meets the eligibility basics (year, major, GPA, Linux, Python, Git); missing hands-on AWS and cloud, which training covers.",
+  "resumeData": {
+    "firstName": "Test",
+    "lastName": "Candidate",
+    "email": "candidate@example.com",
+    "phone": "555-010-0100",
+    "location": "TX",
+    "linkedin": "linkedin.com/in/test-candidate",
+    "github": "github.com/test-candidate",
+    "website": "",
+    "summary": "",
+    "experience": [
+      {
+        "company": "University Developer Club",
+        "title": "Backend Developer",
+        "location": "TX",
+        "startDate": "Sep 2026",
+        "endDate": "Present",
+        "bullets": [
+          "Built Next.js/TypeScript API routes that sort pasted text and uploaded PDF/.txt documents into 14 profile fields, plus a matching endpoint that scores relevance and missing keywords.",
+          "Validated Gemini output with TypeScript type guards, dropping any value the model invented or reworded.",
+          "Owned the shared data contract (TypeScript types), coordinating field changes with teammates via PRs.",
+          "Built a React chat panel that calls an extraction API and maps each status code to a user-facing message.",
+          "Added an offline mock mode so 2 teammates could build frontend features without using API quota."
+        ]
+      },
+      {
+        "company": "Logistics Company",
+        "title": "Administrative Assistant",
+        "location": "TX",
+        "startDate": "Sep 2022",
+        "endDate": "Jul 2023",
+        "bullets": [
+          "Managed freight documentation and rate confirmations, and supported dispatch across daily shipping workflows."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "State University",
+        "degree": "Bachelor of Science",
+        "field": "Computer Science",
+        "startDate": "",
+        "endDate": "May 2028",
+        "gpa": "3.4"
+      }
+    ],
+    "skills": [
+      "Java", "Python", "SQL", "JavaScript", "TypeScript",
+      "Spring Boot", "Spring Security", "JPA/Hibernate", "FastAPI", "Next.js", "React", "Pandas", "Scikit-learn",
+      "PostgreSQL", "MySQL", "SQLite",
+      "Git", "GitHub Actions", "Docker", "Linux", "pytest", "Railway", "Vercel",
+      "Object-Oriented Design", "REST APIs", "Unit Testing", "Agile/Scrum",
+      "Gemini API", "Prompt engineering", "Structured output validation"
+    ],
+    "projects": [
+      {
+        "name": "Savings Tracker",
+        "link": "",
+        "description": "Python, FastAPI, React, PostgreSQL, SQLAlchemy, Docker, JWT. Built a full-stack savings tracker with a summary API computing per-habit totals and longest streaks. Secured endpoints with JWT auth, bcrypt hashing, and row-level ownership checks for user data isolation. Set up GitHub Actions CI running automated tests on every push; Dockerized and deployed on Railway/Vercel. Wrote 17 pytest tests for auth and business logic, catching a duplicate-entry bug corrupting streak calculations."
+      },
+      {
+        "name": "Application Tracker",
+        "link": "",
+        "description": "Java, Spring Boot, Spring Security, JPA/Hibernate, PostgreSQL, Gemini API. Built a Spring Boot REST API with 8 endpoints in a layered controller/service/repository design. Integrated the Gemini API to score documents against descriptions, prompting for structured JSON output. Implemented stateless JWT auth in Spring Security with a custom per-request token filter and BCrypt hashing. Enforced per-user data isolation by scoping all reads and writes to the authenticated user."
+      },
+      {
+        "name": "Credit Risk Model",
+        "link": "",
+        "description": "Python, Scikit-learn, Pandas. Cut 122 features to 76 by missingness across 300K+ records, with per-column imputation and missing flags. Trained Logistic Regression (ROC-AUC 0.749) and Random Forest (0.741) models, using class weights for an 8% default rate. Selected an F1-optimal threshold of 0.671 (24.1% precision, about 3x the 8% base rate; 39.7% recall)."
+      }
+    ],
+    "awards": [],
+    "certifications": [],
+    "languages": ["English", "Spanish"]
+  }
+}

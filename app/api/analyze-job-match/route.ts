@@ -1,4 +1,10 @@
-import { compareKeywords, findEvidence, normalize } from "@/lib/jobKeywords";
+import {
+  compareKeywords,
+  findEvidence,
+  findSkills,
+  hasSkill,
+  normalize,
+} from "@/lib/jobKeywords";
 import type {
   JobMatchRequest,
   JobMatchResult,
@@ -7,19 +13,43 @@ import type {
 } from "@/lib/types/job-match";
 import { callLLM, hasConfiguredAIProvider } from "@/lib/llm";
 import { GeminiError } from "@/lib/gemini";
+import type { ResumeData } from "@/lib/types/resume";
+import { bullets, resumeText as resumeToText } from "@/lib/scoring/ats";
+import { scoreResume } from "@/lib/scoring";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function isJobMatchRequest(value: unknown): value is JobMatchRequest {
-  return (
-    isRecord(value) &&
-    typeof value.resumeText === "string" &&
-    value.resumeText.trim().length > 0 &&
-    typeof value.jobDescription === "string" &&
-    value.jobDescription.trim().length > 0
+function isResumeData(v: unknown): v is ResumeData {
+  if (!isRecord(v)) return false;
+  const strings = ["firstName", "lastName", "email", "phone", "summary"].every(
+    (k) => typeof v[k] === "string",
   );
+  const arrays = [
+    "experience",
+    "education",
+    "skills",
+    "projects",
+    "awards",
+  ].every((k) => Array.isArray(v[k]));
+  const bulletsOk =
+    Array.isArray(v.experience) &&
+    v.experience.every((e) => isRecord(e) && Array.isArray(e.bullets));
+  return strings && arrays && bulletsOk;
+}
+
+function isJobMatchRequest(value: unknown): value is JobMatchRequest {
+  if (!isRecord(value)) return false;
+  const jdOk =
+    typeof value.jobDescription === "string" &&
+    value.jobDescription.trim().length > 0;
+  const hasText =
+    typeof value.resumeText === "string" && value.resumeText.trim().length > 0;
+  const dataOk = value.data === undefined || isResumeData(value.data);
+  const templateOk =
+    value.templateId === undefined || typeof value.templateId === "string";
+  return jdOk && dataOk && templateOk && (hasText || value.data !== undefined);
 }
 
 type Strength = JobMatchResult["strengths"][number];
@@ -32,6 +62,7 @@ type ModelOutput = {
   actionItems: string[];
   overallFit: { matchScore: number; summary: string };
   emptyReasons: { skillGaps: string; suggestedRewordings: string };
+  recruiterRead: { rating: number; reason: string; quote: string } | null;
 };
 
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
@@ -100,6 +131,7 @@ function parseModelOutput(text: string): ModelOutput | null {
   const fit = isRecord(obj.overallFit) ? obj.overallFit : {};
   const scores = isRecord(obj.categoryScores) ? obj.categoryScores : {};
   const reasons = isRecord(obj.emptyReasons) ? obj.emptyReasons : {};
+  const read = isRecord(obj.recruiterRead) ? obj.recruiterRead : null;
 
   return {
     skillGaps: arr(obj.skillGaps)
@@ -125,11 +157,19 @@ function parseModelOutput(text: string): ModelOutput | null {
       skillGaps: str(reasons.skillGaps),
       suggestedRewordings: str(reasons.suggestedRewordings),
     },
+    recruiterRead:
+      read && typeof read.rating === "number" && str(read.quote)
+        ? {
+            rating: read.rating,
+            reason: str(read.reason),
+            quote: str(read.quote),
+          }
+        : null,
   };
 }
 
 const lower = (s: string) => normalize(s).toLowerCase();
-const stripBullet = (s: string) => s.replace(/^[-•*]\s*/, "");
+const stripBullet = (s: string) => s.replace(/^([-•*]|\d+[.)])\s*/, "");
 const contains = (source: string, quote: string) => {
   const q = lower(stripBullet(quote));
   return q.length > 0 && lower(source).includes(q);
@@ -142,7 +182,7 @@ const titlesIn = (s: string): string[] =>
   (s.match(TITLE_WORDS) ?? []).map((w) => w.toLowerCase());
 
 function addsNothingNew(original: string, suggested: string): boolean {
-  if (compareKeywords(original, suggested).missing.length > 0) return false;
+  if (findSkills(suggested).some((s) => !hasSkill(original, s))) return false;
   const origNums = numbersIn(original);
   const sugNums = numbersIn(suggested);
   if (sugNums.some((n) => !origNums.includes(n))) return false;
@@ -153,10 +193,10 @@ function addsNothingNew(original: string, suggested: string): boolean {
 }
 
 function claimsMissingSkill(item: string, missing: string[]): boolean {
-  const mentioned = compareKeywords("", item).missing;
+  const mentioned = findSkills(item);
   if (!mentioned.some((skill) => missing.includes(skill))) return false;
   const tellsToAdd =
-    /\b(add|include|list|mention|put|write)\b.*\b(resume|cv|skills section|experience section)\b/i.test(
+    /\b(add|includ|list|mention|put|writ|describ|stat|nam)\w*\b[^.]*\b(line|bullet|resume|cv|section|experience|description|endpoint)\w*\b/i.test(
       item,
     );
   const conditional = /\b(once|after|when|if)\b/i.test(item);
@@ -174,7 +214,22 @@ function buildPrompt(
   jobDescription: string,
   matched: string[],
   missing: string[],
+  bulletLines: string[],
 ): string {
+  const rewordingRules =
+    bulletLines.length > 0
+      ? `suggestedRewordings: up to 3 rewordings, chosen ONLY from these numbered resume lines:
+${bulletLines.map((b, i) => `${i + 1}. ${b}`).join("\n")}
+- Copy "original" exactly as written above, without the number.
+- Prefer lines that start weakly or could better show what this job values.
+- "suggested" must be a real rewrite, not the original with words added to the end.
+  If the original starts weakly, start with a strong action verb instead
+  (for example, "Responsible for shipment documentation" could become
+  "Managed shipment documentation").`
+      : `suggestedRewordings: up to 3 resume lines that could better match this job.
+- Copy "original" exactly as it appears in the resume, without bullet characters.
+- Only reword experience bullets or project descriptions, never names, job titles, or headings.`;
+
   return `You are an expert technical resume reviewer. Compare the resume between the
 <resume> tags to the job description between the <job_description> tags.
 
@@ -187,26 +242,25 @@ A keyword scan was already done in code. Trust it:
 
 Return ONLY valid JSON, with no prose and no markdown code fences, in exactly this shape:
 {
-  "skillGaps": [{ "skill": string, "importance": "required" | "preferred", "note": string, "jobDescriptionEvidence": string }],
+  "skillGaps": [{ "skill": string, "note": string, "jobDescriptionEvidence": string }],
   "suggestedRewordings": [{ "original": string, "suggested": string, "reason": string }],
   "strengths": [{ "point": string, "evidence": string }],
   "categoryScores": { "skills": number, "experience": number, "education": number },
   "actionItems": [string],
   "overallFit": { "matchScore": number, "summary": string },
-  "emptyReasons": { "skillGaps": string, "suggestedRewordings": string }
+  "emptyReasons": { "skillGaps": string, "suggestedRewordings": string },
+  "recruiterRead": { "rating": number, "reason": string, "quote": string }
 }
 
 skillGaps: one item for each skill in the LACKS list.
 - "skill" uses the exact name from the LACKS list.
-- "importance" is "required" only if the job description lists it under a
-  required, minimum, or must-have section. Otherwise "preferred".
 - "note" is exactly two sentences: why this job needs the skill, then one
-  concrete way the candidate could close the gap.
+  concrete way the candidate could close the gap by learning or building
+  something. Never suggest adding the skill to the resume without having done it.
 - "jobDescriptionEvidence" is a short phrase (3 to 12 words) copied exactly,
   character for character, from the job description, that mentions this skill.
 
-suggestedRewordings: up to 5 resume lines that could better match this job.
-- Copy "original" exactly as it appears in the resume, without bullet characters.
+${rewordingRules}
 - "suggested" may only use facts already in that same original line. Never add a
   technology, tool, number, job title, or company that is not in the original
   line. Never remove numbers.
@@ -237,6 +291,12 @@ overallFit:
 emptyReasons: if skillGaps or suggestedRewordings is empty, give a one-sentence
 reason (for example, "The resume covers every skill this posting asks for.").
 Otherwise use an empty string.
+
+recruiterRead: imagine a recruiter skimming this resume for 10 seconds for this job.
+- "rating" is an integer from 1 to 5: would they keep reading? 1 means no, 5 means definitely.
+- "reason" is one sentence explaining the rating.
+- "quote" is a phrase of 5 to 20 words copied exactly from the resume that most
+  influenced the rating.
 
 Never invent facts about the candidate. Only reuse what is in the resume text.
 
@@ -285,17 +345,30 @@ export async function POST(req: Request) {
 
   if (!isJobMatchRequest(body)) {
     return Response.json(
-      { error: "resumeText and jobDescription are required non-empty strings" },
+      {
+        error:
+          "A resume (data or resumeText) and a non-empty jobDescription are required",
+      },
       { status: 400 },
     );
   }
 
-  const keywords = compareKeywords(body.resumeText, body.jobDescription);
+  const resume = body.data ? resumeToText(body.data) : (body.resumeText ?? "");
+  const jd = body.jobDescription;
+  const bulletLines = body.data
+    ? [
+        ...bullets(body.data),
+        ...body.data.projects.map((p) => p.description.trim()).filter(Boolean),
+      ]
+    : [];
+
+  const keywords = compareKeywords(resume, jd);
   const prompt = buildPrompt(
-    body.resumeText,
-    body.jobDescription,
+    resume,
+    jd,
     keywords.matched,
     keywords.missing,
+    bulletLines,
   );
 
   let text: string;
@@ -316,26 +389,27 @@ export async function POST(req: Request) {
     );
   }
 
-  const resume = body.resumeText;
-  const jd = body.jobDescription;
-
   const modelGaps = new Map(
     parsed.skillGaps.map((g) => [g.skill.toLowerCase(), g]),
   );
-  const skillGaps: SkillGap[] = keywords.missing
-    .map((skill): SkillGap => {
-      const fromModel = modelGaps.get(skill.toLowerCase());
-      const evidence = findEvidence(skill, jd);
+  const unmet = keywords.requirements.filter((r) => !r.met);
+  const missingSkills = unmet.flatMap((r) => r.skills);
+
+  const skillGaps: SkillGap[] = unmet
+    .map((req): SkillGap => {
+      const fromModel = modelGaps.get(req.label.toLowerCase());
+      const evidence = findEvidence(req.skills, jd);
       const modelQuote =
         fromModel && contains(jd, fromModel.jobDescriptionEvidence)
           ? fromModel.jobDescriptionEvidence
           : "";
       return {
-        skill,
-        importance: evidence.section ?? fromModel?.importance ?? "preferred",
+        skill: req.label,
+        importance: evidence.section ?? "preferred",
         note:
-          fromModel?.note ||
-          `This posting asks for ${skill}, and it does not appear in your resume. If you have used it, add it with a specific example; if not, a small project using ${skill} would close this gap.`,
+          fromModel?.note && !claimsMissingSkill(fromModel.note, missingSkills)
+            ? fromModel.note
+            : `This posting asks for ${req.label}, and it does not appear in your resume. If you have used it, add it with a specific example; if not, a small project using it would close this gap.`,
         jobDescriptionEvidence: evidence.phrase || modelQuote,
       };
     })
@@ -343,31 +417,50 @@ export async function POST(req: Request) {
       a.importance === b.importance ? 0 : a.importance === "required" ? -1 : 1,
     );
 
+  const lineKey = (s: string) => lower(stripBullet(s)).replace(/[.;,\s]+$/, "");
+  const rewordable = body.data ? new Set(bulletLines.map(lineKey)) : null;
+
   const seen = new Set<string>();
+  const rejected: Record<string, number> = {};
+  const reject = (why: string) => {
+    rejected[why] = (rejected[why] ?? 0) + 1;
+    return false;
+  };
+
   const suggestedRewordings = parsed.suggestedRewordings
     .filter((r) => {
       const original = stripBullet(r.original);
-      const key = lower(original);
-      if (seen.has(key)) return false;
+      const key = lineKey(original);
+      if (seen.has(key)) return reject("duplicate");
       seen.add(key);
-      return (
-        contains(resume, original) &&
-        lower(r.suggested) !== key &&
-        addsNothingNew(original, r.suggested)
-      );
+      if (rewordable && !rewordable.has(key)) return reject("not a bullet");
+      if (!rewordable && !contains(resume, original))
+        return reject("not in resume");
+      const suggestedKey = lineKey(r.suggested);
+      if (suggestedKey === key || suggestedKey.startsWith(key))
+        return reject("unchanged");
+      if (!addsNothingNew(original, r.suggested))
+        return reject("adds new facts");
+      return true;
     })
-    .slice(0, 5);
+    .slice(0, 3);
+
+  console.log("rewordings", {
+    fromAI: parsed.suggestedRewordings.length,
+    kept: suggestedRewordings.length,
+    rejected,
+  });
 
   const strengths = parsed.strengths
     .filter((s) => contains(resume, s.evidence))
     .slice(0, 5);
 
-  const total = keywords.matched.length + keywords.missing.length;
-  const keywordScore =
-    total === 0 ? 100 : Math.round((keywords.matched.length / total) * 100);
+  const total = keywords.requirements.length;
+  const metCount = total - unmet.length;
+  const keywordScore = total === 0 ? 100 : Math.round((metCount / total) * 100);
 
   const honestActions = parsed.actionItems.filter(
-    (item) => !claimsMissingSkill(item, keywords.missing),
+    (item) => !claimsMissingSkill(item, missingSkills),
   );
   const actionItems =
     honestActions.length > 0
@@ -390,11 +483,17 @@ export async function POST(req: Request) {
   }
   if (suggestedRewordings.length === 0) {
     emptyReasons.suggestedRewordings =
-      parsed.suggestedRewordings.length > 0
-        ? "Suggested rewordings were removed because they added details that are not in your resume."
-        : parsed.emptyReasons.suggestedRewordings ||
-          "Your resume lines already fit this posting well, so no rewordings were needed.";
+      "No safe rewordings found for this job description.";
   }
+
+  const scores = body.data
+    ? await scoreResume({
+        data: body.data,
+        templateId: body.templateId ?? "",
+        jobDescription: jd,
+        ai: parsed.recruiterRead,
+      })
+    : null;
 
   const matchScore = parsed.overallFit.matchScore || keywordScore;
   const result: JobMatchResult = {
@@ -410,9 +509,10 @@ export async function POST(req: Request) {
       rating: toRating(matchScore),
       summary:
         parsed.overallFit.summary ||
-        `Your resume matches ${keywords.matched.length} of ${total} skills this posting lists.`,
+        `Your resume matches ${metCount} of ${total} requirements this posting lists.`,
     },
     emptyReasons,
+    ...(scores ?? {}),
   };
 
   return Response.json(result);
