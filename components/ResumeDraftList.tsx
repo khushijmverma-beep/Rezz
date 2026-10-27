@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ResumeCard from "@/components/ResumeCard";
+import { useRouter } from "next/navigation";
 import {
   createDraft,
   deleteDraft,
@@ -11,10 +12,12 @@ import {
   updateDraft,
   type Draft,
 } from "@/lib/drafts";
+import { nextCopyName } from "@/lib/nextCopyName";
 import { useAuth } from "@/lib/useAuth";
 
 export default function ResumeDraftList() {
   const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
 
   const [result, setResult] = useState<{
     uid: string;
@@ -138,14 +141,18 @@ export default function ResumeDraftList() {
 
   async function handleDuplicate(draft: Draft) {
     try {
-      await createDraft(uid, {
-        title: `Copy of ${draft.title}`,
+      const resumeId = await createDraft(uid, {
+        title: nextCopyName(
+          draft.title,
+          drafts.map((existingDraft) => existingDraft.title),
+        ),
         templateId: draft.templateId,
         targetRole: draft.targetRole,
         data: draft.data,
       });
 
       await refreshDrafts();
+      router.push(`/resume/${resumeId}`);
     } catch (error: unknown) {
       console.error("Could not duplicate resume:", error);
       window.alert("Could not duplicate this resume. Please try again.");
