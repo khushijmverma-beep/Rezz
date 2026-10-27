@@ -37,5 +37,5 @@ export const sampleResume = {
   summary: "Software developer building accessible web applications with React, TypeScript, and Python. Experienced in dashboards, automated tests, and reusable interfaces.",
   projects: baseSampleResume.projects.map((project) => ({ ...project, description: "Built a searchable event calendar with responsive views to help student groups coordinate volunteers." })),
   certifications: ["AWS Certified Cloud Practitioner"],
-  languages: ["English", "Spanish"],
+  languages: [],
 };
