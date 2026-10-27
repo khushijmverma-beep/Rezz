@@ -5,6 +5,8 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { Search, X } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { getPhoto } from "@/lib/profilePhoto";
+import Logo from "@/components/Logo";
+import ProfileMenu from "@/components/ProfileMenu";
 
 type HomeTopBarProps = {
   search: string;
@@ -16,25 +18,24 @@ export default function HomeTopBar({
   onSearchChange,
 }: HomeTopBarProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [photo, setPhoto] = useState<string | null>(null);
+  // Saved photo, tagged with the user it belongs to so a stale one is never shown.
+  const [savedPhoto, setSavedPhoto] = useState<{ uid: string; photo: string | null } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => onAuthStateChanged(auth, setUser), []);
 
   useEffect(() => {
-    if (!user) {
-      setPhoto(null);
-      return;
-    }
+    if (!user) return;
 
+    const uid = user.uid;
     let cancelled = false;
 
-    getPhoto(user.uid)
-      .then((savedPhoto) => {
-        if (!cancelled) setPhoto(savedPhoto);
+    getPhoto(uid)
+      .then((photo) => {
+        if (!cancelled) setSavedPhoto({ uid, photo });
       })
       .catch(() => {
-        if (!cancelled) setPhoto(null);
+        if (!cancelled) setSavedPhoto({ uid, photo: null });
       });
 
     return () => {
@@ -62,15 +63,14 @@ export default function HomeTopBar({
   }, []);
 
   const name = user?.displayName || user?.email?.split("@")[0] || "Account";
+  const photo = savedPhoto && savedPhoto.uid === user?.uid ? savedPhoto.photo : null;
   const avatarSrc = photo ?? user?.photoURL ?? null;
 
   return (
     <header className="sticky top-0 z-20 -mx-4 mb-6 flex h-[68px] items-center gap-4 border-b border-gray-200 bg-white/95 px-4 backdrop-blur sm:-mx-6 sm:px-6">
       <div className="w-10 shrink-0" aria-hidden="true" />
 
-      <span className="shrink-0 text-lg font-bold tracking-tight text-gray-900">
-        REZZ
-      </span>
+      <Logo size={28} className="shrink-0 text-gray-900" />
 
       <div className="mx-auto flex w-full max-w-xl items-center">
         <label className="flex h-10 w-full items-center gap-3 rounded-full bg-gray-100 px-4 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-gray-300">
@@ -101,18 +101,8 @@ export default function HomeTopBar({
       </div>
 
       {user && (
-        <div className="shrink-0" aria-label={`Signed in as ${name}`}>
-          {avatarSrc ? (
-            <img
-              src={avatarSrc}
-              alt={`${name}'s profile`}
-              className="h-9 w-9 rounded-full object-cover"
-            />
-          ) : (
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 text-sm font-medium text-gray-700">
-              {name.charAt(0).toUpperCase()}
-            </span>
-          )}
+        <div className="shrink-0">
+          <ProfileMenu name={name} email={user.email ?? ""} photo={avatarSrc} />
         </div>
       )}
     </header>

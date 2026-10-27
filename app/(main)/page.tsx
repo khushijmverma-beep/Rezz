@@ -17,8 +17,7 @@ import {
   type TemplateId,
 } from "@/lib/types/resume";
 import { getResumeDetails } from "@/lib/resumeDetails";
-import { templates } from "@/lib/templates";
-import TemplateCard from "@/components/TemplateCard";
+import TemplateRow from "@/components/TemplateRow";
 import ResumeCard from "@/components/ResumeCard";
 import NewResumeModal from "@/components/NewResumeModal";
 import HomeToolbar from "@/components/HomeToolbar";
@@ -362,16 +361,7 @@ export default function Home() {
           Start a new resume
         </h2>
 
-        <div className="mt-4 flex gap-5 overflow-x-auto pb-3">
-          {templates.map((template) => (
-            <TemplateCard
-              key={template.id}
-              name={template.name}
-              templateId={template.id}
-              onClick={() => openModal(template.id)}
-            />
-          ))}
-        </div>
+        <TemplateRow onSelect={openModal} />
       </section>
 
       <section className="mt-8">
@@ -405,7 +395,7 @@ export default function Home() {
           <div
             className={`mt-6 ${
               viewMode === "grid"
-                ? "grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
+                ? "grid grid-cols-[repeat(auto-fill,200px)] gap-5"
                 : "flex flex-col gap-3"
             }`}
           >
@@ -432,7 +422,7 @@ export default function Home() {
         ) : searchQuery ? (
           <div className="mt-6 py-10 text-center">
             <p className="text-sm font-medium text-gray-900">
-              No resumes match "{search.trim()}"
+              No resumes match &ldquo;{search.trim()}&rdquo;
             </p>
 
             <button
