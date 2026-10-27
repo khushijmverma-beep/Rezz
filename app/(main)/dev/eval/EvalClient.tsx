@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 
 export type EvalRow = {
   id: string;
@@ -33,6 +33,20 @@ type PreviousRun = {
   metrics: Metrics;
   count: number;
 };
+
+const LAST_RUN_KEY = "rezz-eval-last-run";
+
+// Read the saved run once per page load, before this run overwrites it.
+let savedRun: string | null | undefined;
+
+function readSavedRun(): string | null {
+  if (savedRun === undefined) {
+    savedRun = localStorage.getItem(LAST_RUN_KEY);
+  }
+  return savedRun;
+}
+
+const noSubscribe = () => () => {};
 
 function mean(values: number[]): number | null {
   if (values.length === 0) return null;
@@ -138,24 +152,27 @@ export default function EvalClient({
     [rows]
   );
 
-  const [previous, setPrevious] =
-    useState<PreviousRun | null>(null);
+  const saved = useSyncExternalStore(
+    noSubscribe,
+    readSavedRun,
+    () => null
+  );
+
+  const previous = useMemo(() => {
+    if (!saved) return null;
+    try {
+      return JSON.parse(saved) as PreviousRun;
+    } catch {
+      return null;
+    }
+  }, [saved]);
 
   useEffect(() => {
-    const key = "rezz-eval-last-run";
-    const saved = localStorage.getItem(key);
-
-    if (saved) {
-      try {
-        setPrevious(JSON.parse(saved) as PreviousRun);
-      } catch {
-        setPrevious(null);
-      }
-    }
+    readSavedRun();
 
     if (rows.length > 0 && errors.length === 0) {
       localStorage.setItem(
-        key,
+        LAST_RUN_KEY,
         JSON.stringify({
           version,
           metrics,

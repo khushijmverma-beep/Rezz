@@ -3,7 +3,7 @@ import { app } from "@/lib/firebase";
 
 const db = getFirestore(app);
 
-const SUBCOLLECTIONS = ["drafts", "analyses", "activity"];
+const SUBCOLLECTIONS = ["drafts", "analyses", "activityDays"];
 
 // deletes every document in those subcollections, in batches
 export async function deleteAllUserData(uid: string): Promise<void> {
