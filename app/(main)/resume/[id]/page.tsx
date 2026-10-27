@@ -6,7 +6,7 @@ import Link from "next/link";
 import AnalyzePanel from "@/components/AnalyzePanel";
 import DownloadMenu from "@/components/DownloadMenu";
 import PrintRoot from "@/components/templates/PrintRoot";
-import { logActivity, saveAnalysis } from "@/lib/activity";
+import { logActivity, saveAnalysis, updateAnalysisFeedback } from "@/lib/activity";
 import { createDraft, getDraft, updateDraft, type Draft } from "@/lib/drafts";
 import { downloadPdf } from "@/lib/exportResume";
 import { resumeToText } from "@/lib/resumeToText";
@@ -25,7 +25,8 @@ function trackActivity(uid: string, type: "edit" | "export" | "analysis") {
   });
 }
 
-const resumeKeys = Object.keys(emptyResumeData) as (keyof ResumeData)[];
+// "style" is optional, so emptyResumeData has no key for it; add it explicitly.
+const resumeKeys = [...Object.keys(emptyResumeData), "style"] as (keyof ResumeData)[];
 
 // Each field sends a full resume copied from the data it last rendered. When two
 // fields blur before the next render, keep only the keys that actually changed.
@@ -80,6 +81,7 @@ export default function ResumeDetailPage() {
   const autoDownloadHandledRef = useRef(false);
   const [createRetry, setCreateRetry] = useState(0);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [lastAnalysisId, setLastAnalysisId] = useState<string | null>(null);
 
   useEffect(() => {
     renderedDataRef.current = data;
@@ -419,16 +421,34 @@ export default function ResumeDetailPage() {
       <aside className={styles.sidebar} aria-label="Resume analysis">
         <AnalyzePanel
           resumeText={resumeToText(data)}
-          onResult={(result: JobMatchResult) => {
-            trackActivity(user.uid, "analysis");
+          data={data}
+          templateId={draft.templateId}
+          onResult={(result: JobMatchResult, jobDescription: string) => {
+            // saveAnalysis also records the "analysis" activity.
+            setLastAnalysisId(null);
             void saveAnalysis(user.uid, {
               draftId: id,
               draftTitle: titleRef.current,
               matchScore: result.overallFit.matchScore,
               rating: result.overallFit.rating,
-            }).catch((error: unknown) => {
-              console.error("Failed to save resume analysis:", error);
-            });
+              atsScore: result.ats?.score,
+              humanScore: result.human?.score,
+              templateId: draft.templateId,
+              scorerVersion: result.scorerVersion,
+              jobDescription,
+            })
+              .then(setLastAnalysisId)
+              .catch((error: unknown) => {
+                console.error("Failed to save resume analysis:", error);
+              });
+          }}
+          onFeedback={async (rating, note) => {
+            if (!lastAnalysisId) return;
+            try {
+              await updateAnalysisFeedback(user.uid, lastAnalysisId, rating, note);
+            } catch (error: unknown) {
+              console.error("Failed to save analysis feedback:", error);
+            }
           }}
         />
       </aside>
