@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -32,8 +31,8 @@ export default function ResumeCard({
 
   return (
     <article
-      className={`relative rounded-xl border border-gray-200 bg-white ${
-        isList ? "flex items-center gap-4 p-3" : "overflow-visible"
+      className={`relative min-w-0 rounded-xl border border-gray-200 bg-white transition hover:border-gray-300 ${
+        isList ? "flex items-center gap-4 p-3" : "w-[200px] overflow-hidden"
       }`}
     >
       <Link
@@ -41,7 +40,7 @@ export default function ResumeCard({
         className={isList ? "min-w-0 flex-1" : "block"}
       >
         {!isList && (
-          <div className="overflow-hidden rounded-t-xl bg-gray-50">
+          <div className="aspect-[3/4] w-full overflow-hidden bg-gray-50">
             <ResumeThumbnail
               templateId={draft.templateId as TemplateId}
               data={draft.data}
@@ -49,13 +48,14 @@ export default function ResumeCard({
           </div>
         )}
 
-        <div className={isList ? "min-w-0" : "p-4"}>
-          <h3 className="truncate font-semibold text-gray-900">
+        <div className={isList ? "min-w-0" : "p-3"}>
+          <h3 className="truncate text-sm font-semibold text-gray-900">
             {draft.title}
           </h3>
-          <p className="mt-1 text-sm text-gray-500">
+
+          <p className="mt-1 text-xs text-gray-500">
             {isList && dateKind && (
-              <span className="mr-1 text-xs font-medium">{dateKind}</span>
+              <span className="mr-1 font-medium">{dateKind}</span>
             )}
             {dateLabel}
           </p>
@@ -64,7 +64,9 @@ export default function ResumeCard({
 
       <div className={isList ? "shrink-0" : "absolute right-2 top-2"}>
         <ResumeMenu
-          onOpen={() => { window.location.href = `/resume/${draft.id}`; }}
+          onOpen={() => {
+            window.location.href = `/resume/${draft.id}`;
+          }}
           onRename={() => onRename(draft)}
           onDuplicate={() => onDuplicate(draft)}
           onDownloadPdf={() => {
