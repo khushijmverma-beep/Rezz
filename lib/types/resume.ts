@@ -1,4 +1,4 @@
-export type TemplateId = "blank" | "modern" | "professional" | "simple" | "classic" | "bold" | "compact";
+export type TemplateId = "blank" | "modern" | "professional" | "simple" | "classic" | "bold" | "compact" | "engineer" | "ats-standard";
 
 export type ExperienceItem = {
   company: string;
@@ -24,7 +24,15 @@ export type ProjectItem = {
   description: string;
 };
 
+export type ResumeStyle = {
+  fontFamily: string;
+  fontSize: number;
+  textColor: string;
+  accentColor: string;
+};
+
 export type ResumeData = {
+  style?: ResumeStyle;
   firstName: string;
   lastName: string;
   email: string;

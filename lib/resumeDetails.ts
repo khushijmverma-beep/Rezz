@@ -98,7 +98,7 @@ const hasDetails = (details: ResumeData) =>
   Object.values(details).some((value) =>
     typeof value === "string"
       ? value.trim() !== ""
-      : value.some((item) =>
+      : Array.isArray(value) && value.some((item) =>
           typeof item === "string" ? item.trim() !== "" : hasContent(item),
         ),
   );
