@@ -1,5 +1,6 @@
-
 "use client";
+
+import { LayoutGrid, List } from "lucide-react";
 
 type SortBy = "updatedAt" | "createdAt" | "title";
 type ViewMode = "grid" | "list";
@@ -21,8 +22,10 @@ export default function HomeToolbar({
   viewMode,
   onViewModeChange,
 }: HomeToolbarProps) {
+  const nextView = viewMode === "grid" ? "list" : "grid";
+
   return (
-    <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
       <label className="flex items-center gap-2 text-sm text-gray-600">
         Sort by
         <select
@@ -30,7 +33,7 @@ export default function HomeToolbar({
           onChange={(event) =>
             onSortByChange(event.target.value as SortBy)
           }
-          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900"
+          className="rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-900"
         >
           <option value="updatedAt">Last modified</option>
           <option value="createdAt">Date created</option>
@@ -42,43 +45,40 @@ export default function HomeToolbar({
         <button
           type="button"
           onClick={onToggleOrder}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
           aria-label="Toggle sort order"
         >
           {sortBy === "title"
-            ? descending ? "Z–A" : "A–Z"
-            : descending ? "Newest first" : "Oldest first"}
+            ? descending
+              ? "Z–A"
+              : "A–Z"
+            : descending
+              ? "Newest first"
+              : "Oldest first"}
         </button>
 
         <button
           type="button"
-          onClick={() => onViewModeChange("grid")}
-          aria-label="Grid view"
-          aria-pressed={viewMode === "grid"}
-          className={`rounded-lg border px-3 py-2 text-sm ${
-            viewMode === "grid"
-              ? "border-gray-900 bg-gray-900 text-white"
-              : "border-gray-300 hover:bg-gray-50"
-          }`}
+          onClick={() => onViewModeChange(nextView)}
+          aria-label={
+            nextView === "list"
+              ? "Switch to list view"
+              : "Switch to grid view"
+          }
+          title={
+            nextView === "list"
+              ? "Switch to list view"
+              : "Switch to grid view"
+          }
+          className="rounded-lg border border-gray-300 p-2.5 text-gray-700 transition hover:bg-gray-100"
         >
-          ▦
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onViewModeChange("list")}
-          aria-label="List view"
-          aria-pressed={viewMode === "list"}
-          className={`rounded-lg border px-3 py-2 text-sm ${
-            viewMode === "list"
-              ? "border-gray-900 bg-gray-900 text-white"
-              : "border-gray-300 hover:bg-gray-50"
-          }`}
-        >
-          ☰
+          {viewMode === "grid" ? (
+            <List size={18} aria-hidden="true" />
+          ) : (
+            <LayoutGrid size={18} aria-hidden="true" />
+          )}
         </button>
       </div>
     </div>
   );
 }
-
