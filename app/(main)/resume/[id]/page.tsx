@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AnalyzePanel from "@/components/AnalyzePanel";
+import ChangeTemplateDialog from "@/components/ChangeTemplateDialog";
 import DownloadMenu from "@/components/DownloadMenu";
 import PrintRoot from "@/components/templates/PrintRoot";
 import { logActivity, saveAnalysis, updateAnalysisFeedback } from "@/lib/activity";
@@ -12,12 +13,12 @@ import { downloadPdf } from "@/lib/exportResume";
 import { resumeToText } from "@/lib/resumeToText";
 import { getTemplate } from "@/lib/templates";
 import type { JobMatchResult } from "@/lib/types/job-match";
-import { emptyResumeData, type ResumeData } from "@/lib/types/resume";
+import { emptyResumeData, type ResumeData, type TemplateId } from "@/lib/types/resume";
 import { useAuth } from "@/lib/useAuth";
 import styles from "./page.module.css";
 
 type SaveStatus = "saving" | "saved" | "retrying";
-type DraftContent = { title: string; data: ResumeData };
+type DraftContent = { title: string; templateId: string; data: ResumeData };
 
 function trackActivity(uid: string, type: "edit" | "export" | "analysis") {
   void logActivity(uid, type).catch((error: unknown) => {
@@ -73,6 +74,7 @@ export default function ResumeDetailPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const titleRef = useRef("");
+  const templateIdRef = useRef("");
   const dataRef = useRef<ResumeData>(emptyResumeData);
   const renderedDataRef = useRef<ResumeData>(emptyResumeData);
   const creatingDraftRef = useRef(false);
@@ -82,6 +84,7 @@ export default function ResumeDetailPage() {
   const [createRetry, setCreateRetry] = useState(0);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [lastAnalysisId, setLastAnalysisId] = useState<string | null>(null);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
 
   useEffect(() => {
     renderedDataRef.current = data;
@@ -103,6 +106,7 @@ export default function ResumeDetailPage() {
       const loadedDraft = await getDraft(user.uid, id);
       setDraft(loadedDraft);
       const loadedTitle = loadedDraft?.title ?? "";
+      const loadedTemplateId = loadedDraft?.templateId ?? "";
       const loadedData = {
         ...emptyResumeData,
         ...loadedDraft?.data,
@@ -110,10 +114,12 @@ export default function ResumeDetailPage() {
         languages: loadedDraft?.data.languages ?? [],
       };
       titleRef.current = loadedTitle;
+      templateIdRef.current = loadedTemplateId;
       dataRef.current = loadedData;
       renderedDataRef.current = loadedData;
       savedContentRef.current = JSON.stringify({
         title: loadedTitle,
+        templateId: loadedTemplateId,
         data: loadedData,
       });
       setTitle(loadedTitle);
@@ -243,6 +249,7 @@ export default function ResumeDetailPage() {
 
       const snapshot: DraftContent = {
         title: titleRef.current,
+        templateId: templateIdRef.current,
         data: dataRef.current,
       };
       const serializedSnapshot = JSON.stringify(snapshot);
@@ -258,7 +265,7 @@ export default function ResumeDetailPage() {
             trackActivity(user.uid, "edit");
             if (
               serializedSnapshot ===
-              JSON.stringify({ title: titleRef.current, data: dataRef.current })
+              JSON.stringify({ title: titleRef.current, templateId: templateIdRef.current, data: dataRef.current })
             ) {
               setSaveStatus("saved");
             }
@@ -283,7 +290,7 @@ export default function ResumeDetailPage() {
       }
       if (
         serializedSnapshot !==
-        JSON.stringify({ title: titleRef.current, data: dataRef.current })
+        JSON.stringify({ title: titleRef.current, templateId: templateIdRef.current, data: dataRef.current })
       ) {
         continue;
       }
@@ -294,7 +301,7 @@ export default function ResumeDetailPage() {
   useEffect(() => {
     if (!draft || !user || savedContentRef.current === null) return;
 
-    const currentContent = JSON.stringify({ title, data });
+    const currentContent = JSON.stringify({ title, templateId: draft.templateId, data });
     if (currentContent === savedContentRef.current) return;
 
     const timeout = window.setTimeout(() => {
@@ -397,6 +404,13 @@ export default function ResumeDetailPage() {
                   ? "Saved"
                   : "Couldn't save, retrying"}
             </span>
+            <button
+              type="button"
+              onClick={() => setTemplateDialogOpen(true)}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Change template
+            </button>
             <DownloadMenu
               title={title}
               data={data}
@@ -453,6 +467,21 @@ export default function ResumeDetailPage() {
         />
       </aside>
       <PrintRoot templateId={printTemplateId} data={data} />
+      {templateDialogOpen && (
+        <ChangeTemplateDialog
+          currentTemplateId={draft.templateId}
+          data={data}
+          onClose={() => setTemplateDialogOpen(false)}
+          onChange={(templateId: TemplateId) => {
+            // Only the template changes; data (including style) is untouched.
+            // The autosave effect sees the new templateId and saves it.
+            templateIdRef.current = templateId;
+            setDraft((current) => (current ? { ...current, templateId } : current));
+            setSaveStatus("saving");
+            setTemplateDialogOpen(false);
+          }}
+        />
+      )}
     </main>
   );
 }
