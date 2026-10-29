@@ -361,6 +361,17 @@ export async function POST(req: Request) {
   if (!hasConfiguredAIProvider()) {
     return Response.json({ error: "AI isn't configured" }, { status: 500 });
   }
+
+  if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+    return Response.json(
+      {
+        error:
+          "Server auth isn't configured. Check NEXT_PUBLIC_FIREBASE_API_KEY.",
+      },
+      { status: 500 },
+    );
+  }
+
   const uid = await verifyUser(req);
   if (!uid) {
     return Response.json(
