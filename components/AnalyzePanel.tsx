@@ -5,6 +5,7 @@ import type { CheckStatus, JobMatchResult, ScoreSection } from "@/lib/types/job-
 import type { ResumeData } from "@/lib/types/resume";
 import styles from "./AnalyzePanel.module.css";
 import ReportExpanded from "./ReportExpanded";
+import { useAuth } from "@/lib/useAuth";
 
 export type UserRating = "too_high" | "about_right" | "too_low";
 
@@ -15,7 +16,7 @@ const RATING_OPTIONS: { value: UserRating; label: string }[] = [
 ];
 
 type AnalyzePanelProps = {
-  resumeText?: string; // old way, kept until Juan passes data
+  resumeText?: string;
   data?: ResumeData;
   templateId?: string;
   onResult?: (result: JobMatchResult, jobDescription: string) => void;
@@ -147,7 +148,7 @@ function FeedbackBox({ onSubmit }: { onSubmit: (rating: UserRating, note: string
         {status === "saving" ? "Saving..." : "Send feedback"}
       </button>
       {status === "error" && (
-        <p className={styles.errorMessage}>Couldn't save your feedback. Please try again.</p>
+        <p className={styles.errorMessage}>Couldn&apos;t save your feedback. Please try again.</p>
       )}
     </section>
   );
@@ -167,6 +168,8 @@ export default function AnalyzePanel({
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
   const [expanded, setExpanded] = useState(false);
+  const { user } = useAuth();
+
 
   async function runAnalysis() {
     setExpanded(false);
@@ -177,28 +180,46 @@ export default function AnalyzePanel({
     setCheckedItems(new Set());
 
     try {
+      if (!user) {
+        setError("Please log in again.");
+        return;
+      }
+      const token = await user.getIdToken();
+
       const response = await fetch("/api/analyze-job-match", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ resumeText, data, templateId, jobDescription }),
       });
 
       const body: unknown = await response.json();
+      const info = (typeof body === "object" && body !== null ? body : {}) as {
+        error?: unknown;
+        code?: unknown;
+        retryAfter?: unknown;
+      };
 
       if (!response.ok) {
+        if (response.status === 401) {
+          setError("Please log in again.");
+          return;
+        }
+        if (info.code === "RATE_LIMITED") {
+          const seconds = typeof info.retryAfter === "number" ? info.retryAfter : 60;
+          const mins = Math.ceil(seconds / 60);
+          setError(
+            `You've hit the analysis limit. Try again in ${mins} minute${mins === 1 ? "" : "s"}.`,
+          );
+          return;
+        }
         if (response.status === 503 || response.status === 429) {
           setError("The AI service is busy right now. Please try again in a minute.");
           return;
         }
-
-        const message =
-          typeof body === "object" &&
-          body !== null &&
-          "error" in body &&
-          typeof (body as { error: unknown }).error === "string"
-            ? (body as { error: string }).error
-            : "Analysis failed";
-        setError(message);
+        setError(typeof info.error === "string" ? info.error : "Analysis failed");
         return;
       }
 
@@ -272,9 +293,8 @@ export default function AnalyzePanel({
         <p className={styles.detailTitle}>
           {gap.skill}{" "}
           <span
-            className={`${styles.importanceBadge} ${
-              gap.importance === "required" ? styles.required : styles.preferred
-            }`}
+            className={`${styles.importanceBadge} ${gap.importance === "required" ? styles.required : styles.preferred
+              }`}
           >
             {gap.importance}
           </span>

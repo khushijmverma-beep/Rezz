@@ -1,3 +1,4 @@
+import { checkRateLimit } from "@/lib/rateLimit";
 import {
   compareKeywords,
   findEvidence,
@@ -328,9 +329,44 @@ function responseForLLMError(err: GeminiError): Response {
   );
 }
 
+async function verifyUser(req: Request): Promise<string | null> {
+  const header = req.headers.get("authorization") ?? "";
+  const match = header.match(/^Bearer (.+)$/);
+  if (!match) return null;
+
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const res = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken: match[1] }),
+        cache: "no-store",
+      },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as { users?: { localId?: string }[] };
+    return data.users?.[0]?.localId ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const MAX_CHARS = 20_000;
+
 export async function POST(req: Request) {
   if (!hasConfiguredAIProvider()) {
     return Response.json({ error: "AI isn't configured" }, { status: 500 });
+  }
+  const uid = await verifyUser(req);
+  if (!uid) {
+    return Response.json(
+      { error: "Please log in again.", code: "UNAUTHENTICATED" },
+      { status: 401 },
+    );
   }
 
   let body: unknown;
@@ -355,6 +391,27 @@ export async function POST(req: Request) {
 
   const resume = body.data ? resumeToText(body.data) : (body.resumeText ?? "");
   const jd = body.jobDescription;
+  if (resume.length > MAX_CHARS || jd.length > MAX_CHARS) {
+    return Response.json(
+      {
+        error: `Resume and job description must each be under ${MAX_CHARS.toLocaleString()} characters.`,
+        code: "TOO_LONG",
+      },
+      { status: 413 },
+    );
+  }
+
+  const limit = checkRateLimit(uid);
+  if (!limit.allowed) {
+    return Response.json(
+      {
+        error: "Too many analyses.",
+        code: "RATE_LIMITED",
+        retryAfter: limit.retryAfter,
+      },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+    );
+  }
   const bulletLines = body.data
     ? [
         ...bullets(body.data),
