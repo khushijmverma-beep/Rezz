@@ -169,12 +169,14 @@ export default function AnalyzePanel({
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
   const [expanded, setExpanded] = useState(false);
   const { user } = useAuth();
+  const [errorCode, setErrorCode] = useState<string | null>(null);
 
 
   async function runAnalysis() {
     setExpanded(false);
     setIsLoading(true);
     setError(null);
+    setErrorCode(null);
     setResult(null);
     setCopiedIndex(null);
     setCheckedItems(new Set());
@@ -203,6 +205,7 @@ export default function AnalyzePanel({
       };
 
       if (!response.ok) {
+        setErrorCode(typeof info.code === "string" ? info.code : null);
         if (response.status === 401) {
           setError("Please log in again.");
           return;
@@ -246,6 +249,7 @@ export default function AnalyzePanel({
     setExpanded(false);
     setResult(null);
     setError(null);
+    setErrorCode(null);
   }
 
   async function handleCopy(text: string, index: number) {
@@ -550,14 +554,16 @@ export default function AnalyzePanel({
           <h2 className={styles.heading}>Analysis failed</h2>
           <p className={styles.errorMessage}>{error}</p>
           <div className={styles.buttonRow}>
-            <button
-              className={styles.analyzeButton}
-              type="button"
-              onClick={() => void runAnalysis()}
-              disabled={isLoading}
-            >
-              {isLoading ? "Analyzing..." : "Retry"}
-            </button>
+            {errorCode !== "TOO_LONG" && (
+              <button
+                className={styles.analyzeButton}
+                type="button"
+                onClick={() => void runAnalysis()}
+                disabled={isLoading}
+              >
+                {isLoading ? "Analyzing..." : "Retry"}
+              </button>
+            )}
             <button
               className={styles.secondaryButton}
               type="button"
