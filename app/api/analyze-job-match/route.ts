@@ -335,7 +335,12 @@ async function verifyUser(req: Request): Promise<string | null> {
   if (!match) return null;
 
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.error(
+      "[auth] NEXT_PUBLIC_FIREBASE_API_KEY is not set. Add it to .env.local and restart the dev server.",
+    );
+    return null;
+  }
 
   try {
     const res = await fetch(
@@ -347,10 +352,16 @@ async function verifyUser(req: Request): Promise<string | null> {
         cache: "no-store",
       },
     );
-    if (!res.ok) return null;
+    if (!res.ok) {
+      if (res.status !== 400) {
+        console.error(`[auth] Firebase accounts:lookup returned ${res.status}`);
+      }
+      return null;
+    }
     const data = (await res.json()) as { users?: { localId?: string }[] };
     return data.users?.[0]?.localId ?? null;
   } catch {
+    console.error("[auth] Could not reach Firebase accounts:lookup");
     return null;
   }
 }
