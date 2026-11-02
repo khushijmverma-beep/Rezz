@@ -1,6 +1,6 @@
 import type { ResumeData } from "@/lib/types/resume";
 import type { CheckStatus, ScoreCheck, ScoreSection } from "@/lib/types/job-match";
-import { compareKeywords, findEvidence, hasSkill, normalize } from "@/lib/jobKeywords";
+import { compareKeywords, findEvidence, hasSkill, impliedInResume, normalize } from "@/lib/jobKeywords";
 import { ATS_WEIGHTS, KEYWORD_WEIGHTS, LENGTH_LIMITS, STATUS_THRESHOLDS } from "./weights";
 
 export type AtsInput = {
@@ -117,7 +117,7 @@ function keywordCheck(data: ResumeData, jobDescription: string): ScoreCheck {
       missing.push({ label: req.label, required: evidence.section === "required", phrase: evidence.phrase });
       continue;
     }
-    if (hasSkill(used, req.matchedSkill)) {
+    if (hasSkill(used, req.matchedSkill) || impliedInResume(req.matchedSkill, used)) {
       earned += weight * KEYWORD_WEIGHTS.inContext;
     } else {
       earned += weight * KEYWORD_WEIGHTS.listedOnly;

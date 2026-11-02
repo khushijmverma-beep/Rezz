@@ -1,6 +1,6 @@
 import type { ResumeData } from "@/lib/types/resume";
 import type { ScoreCheck, ScoreSection } from "@/lib/types/job-match";
-import { findSkills, hasSkill, normalize } from "@/lib/jobKeywords";
+import { findSkills, hasSkill, impliedInResume, normalize } from "@/lib/jobKeywords";
 import { bullets, makeCheck, resumeText } from "./ats";
 import { HUMAN_LIMITS, HUMAN_WEIGHTS } from "./weights";
 
@@ -117,7 +117,7 @@ function relevanceCheck(data: ResumeData, jobDescription: string): ScoreCheck {
 
   const offTopic = jobs.filter((job) => {
     const top = job.bullets.map((b) => b.trim()).filter(Boolean).slice(0, HUMAN_LIMITS.topBulletsPerJob).join("\n");
-    return !jdSkills.some((skill) => hasSkill(top, skill));
+    return !jdSkills.some((skill) => hasSkill(top, skill) || impliedInResume(skill, top));
   });
   const names = offTopic.map((j) => j.company.trim() || j.title.trim());
 

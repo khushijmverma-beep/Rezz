@@ -193,6 +193,43 @@ function addsNothingNew(original: string, suggested: string): boolean {
   return true;
 }
 
+const STOP = new Set([
+  "a",
+  "an",
+  "the",
+  "and",
+  "or",
+  "to",
+  "of",
+  "for",
+  "in",
+  "on",
+  "by",
+  "with",
+  "through",
+  "via",
+  "using",
+  "that",
+  "which",
+  "as",
+  "at",
+  "from",
+]);
+const contentWords = (s: string) =>
+  lower(s)
+    .split(/[^a-z0-9+#.%-]+/)
+    .filter((w) => w && !STOP.has(w));
+
+const WEAK_START =
+  /^(responsible for|worked on|helped|assisted|duties included|tasked with|involved in|participated in)\b/i;
+
+function isRealRewording(original: string, suggested: string): boolean {
+  if (WEAK_START.test(original) && !WEAK_START.test(suggested)) return true;
+  const before = new Set(contentWords(original));
+  const added = contentWords(suggested).filter((w) => !before.has(w));
+  return added.length >= 3;
+}
+
 function claimsMissingSkill(item: string, missing: string[]): boolean {
   const mentioned = findSkills(item);
   if (!mentioned.some((skill) => missing.includes(skill))) return false;
@@ -501,6 +538,8 @@ export async function POST(req: Request) {
         return reject("unchanged");
       if (!addsNothingNew(original, r.suggested))
         return reject("adds new facts");
+      if (!isRealRewording(original, r.suggested))
+        return reject("too small a change");
       return true;
     })
     .slice(0, 3);
