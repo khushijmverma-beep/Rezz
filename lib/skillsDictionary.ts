@@ -20,6 +20,7 @@ export type SkillCategory =
 export type SkillTerm = {
   name: string;
   aliases?: string[];
+  impliedBy?: string[]; // resume only, these words count as having this skill (Git and Version Control should be the same)
   category: SkillCategory;
   caseSensitive?: boolean; // for short terms that are also normal words (Go, REST)
 };
@@ -114,7 +115,7 @@ export const SKILLS: SkillTerm[] = [
   { name: "Snowflake", category: "database" },
   { name: "BigQuery", category: "database" },
   { name: "Redshift", category: "database" },
-  { name: "NoSQL", category: "database" },
+  { name: "NoSQL", impliedBy: ["mongodb", "dynamodb", "cassandra", "redis"], category: "database" },
   { name: "MariaDB", category: "database" },
 
   // Cloud
@@ -145,7 +146,7 @@ export const SKILLS: SkillTerm[] = [
   { name: "Puppet", category: "devops" },
   { name: "Chef", category: "devops", caseSensitive: true },
   { name: "Infrastructure as Code", aliases: ["IaC"], category: "devops" },
-  { name: "CI/CD", aliases: ["CI CD", "CICD", "continuous integration", "continuous delivery", "continuous deployment"], category: "devops" },
+  { name: "CI/CD", aliases: ["CI CD", "CICD", "continuous integration", "continuous delivery", "continuous deployment"], impliedBy: ["github actions", "jenkins", "gitlab ci", "circleci", "travis ci"], category: "devops" },
   { name: "GitHub Actions", category: "devops" },
   { name: "GitLab CI", aliases: ["GitLab CI/CD"], category: "devops" },
   { name: "Jenkins", category: "devops" },
@@ -187,7 +188,7 @@ export const SKILLS: SkillTerm[] = [
   { name: "A/B testing", aliases: ["AB testing", "A/B tests"], category: "data" },
 
   // Machine learning and AI
-  { name: "Machine Learning", aliases: ["ML"], category: "ml" },
+  { name: "Machine Learning", aliases: ["ML"], impliedBy: ["scikit-learn", "tensorflow", "pytorch", "xgboost"], category: "ml" },
   { name: "Deep Learning", category: "ml" },
   { name: "scikit-learn", aliases: ["sklearn", "scikit learn"], category: "ml" },
   { name: "TensorFlow", category: "ml" },
@@ -211,7 +212,7 @@ export const SKILLS: SkillTerm[] = [
   { name: "MLOps", category: "ml" },
 
   // Testing
-  { name: "Unit testing", aliases: ["unit tests", "unit test"], category: "testing" },
+  { name: "Unit testing", aliases: ["unit tests", "unit test"], impliedBy: ["junit", "pytest", "jest", "mocha"], category: "testing" },
   { name: "Integration testing", aliases: ["integration tests"], category: "testing" },
   { name: "Test-driven development", aliases: ["TDD"], category: "testing" },
   { name: "JUnit", category: "testing" },
@@ -260,7 +261,10 @@ export const SKILLS: SkillTerm[] = [
   { name: "ServiceNow", category: "tool" },
 
   // Methods and concepts
-  { name: "Agile", category: "method" },
+  { name: "Agile", impliedBy: ["scrum", "kanban"], category: "method" },
+  { name: "Code review", aliases: ["code reviews"], impliedBy: ["pull requests", "pull request", "PR reviews"], category: "method" },
+  { name: "Version control", impliedBy: ["git", "github", "gitlab", "bitbucket", "svn"], category: "method" },
+  { name: "Cloud computing", impliedBy: ["aws", "azure", "gcp", "google cloud"], category: "method" },
   { name: "Scrum", category: "method" },
   { name: "Kanban", category: "method" },
   { name: "Object-oriented programming", aliases: ["OOP", "object oriented programming", "object-oriented"], category: "method" },
@@ -272,11 +276,8 @@ export const SKILLS: SkillTerm[] = [
   { name: "Caching", aliases: ["cache"], category: "method" },
   { name: "Concurrency", aliases: ["multithreading", "multi-threading"], category: "method" },
   { name: "API design", category: "method" },
-  { name: "Code review", aliases: ["code reviews"], category: "method" },
-  { name: "Version control", category: "method" },
   { name: "SDLC", aliases: ["software development life cycle", "software development lifecycle"], category: "method" },
   { name: "DevOps", category: "method" },
-  { name: "Cloud computing", category: "method" },
   { name: "Computer networking", aliases: ["TCP/IP"], category: "method" },
   { name: "Operating systems", category: "method" },
 ];

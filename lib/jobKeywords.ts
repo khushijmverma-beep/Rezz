@@ -4,8 +4,8 @@ const SENTENCE_END = /(?<!\b(?:e\.g|i\.e|etc|vs|Sr|Jr|U\.S)\.)(?<=[.!?])\s+/i;
 const BULLET = /^[-•*]\s*/;
 const REQUIRED_HEADER = /required|requirements|minimum|must|basic/i;
 const PREFERRED_HEADER = /preferred|nice to have|bonus|plus/i;
-const NEUTRAL_HEADER = /^(about|responsibilities|what you'?ll do|who you are|benefits|perks|the role|the team)/i;
-
+const NEUTRAL_HEADER =
+  /^(about|responsibilities|what you'?ll do|who you are|benefits|perks|the role|the team)/i;
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
@@ -34,6 +34,20 @@ const COMPILED = SKILLS.map((term, order) => ({ term, order }))
     };
   });
 
+const IMPLIED = new Map(
+  SKILLS.filter((t) => t.impliedBy && t.impliedBy.length > 0).map((t) => [
+    t.name,
+    new RegExp(
+      `(?<![A-Za-z0-9])(?:${t.impliedBy!.map(escapeRegex).join("|")})(?![A-Za-z0-9])`,
+      "i",
+    ),
+  ]),
+);
+
+export function impliedInResume(skill: string, resumeText: string): boolean {
+  return IMPLIED.get(skill)?.test(resumeText) ?? false;
+}
+
 export function normalize(text: string): string {
   return text
     .replace(/[\u2018\u2019]/g, "'")
@@ -47,7 +61,7 @@ export function splitSentences(text: string): string[] {
   const lines = text.split(/\r?\n/);
   const cleaned = lines.map((line) => normalize(line).replace(BULLET, ""));
   const nonEmpty = cleaned.filter((line) => line.length > 0);
-  const sentences = nonEmpty.flatMap(line => line.split(SENTENCE_END));
+  const sentences = nonEmpty.flatMap((line) => line.split(SENTENCE_END));
   return sentences;
 }
 
@@ -110,16 +124,16 @@ export function groupSentence(sentence: string): string[][] {
 }
 
 export type Requirement = {
-  skills: string[]; 
-  label: string; 
+  skills: string[];
+  label: string;
   met: boolean;
   matchedSkill: string | null;
 };
 
 export type KeywordComparison = {
   requirements: Requirement[];
-  matched: string[]; 
-  missing: string[]; 
+  matched: string[];
+  missing: string[];
 };
 
 const BY_NAME = new Map(COMPILED.map((c) => [c.name, c]));
@@ -152,7 +166,10 @@ export function compareKeywords(
   const requirements: Requirement[] = extractRequirements(jobDescription).map(
     (skills) => {
       const matchedSkill =
-        skills.find((s) => BY_NAME.get(s)!.regex.test(resume)) ?? null;
+        skills.find(
+          (s) =>
+            BY_NAME.get(s)!.regex.test(resume) || impliedInResume(s, resume),
+        ) ?? null;
       return {
         skills,
         label: labelFor(skills),
@@ -173,7 +190,6 @@ export function compareKeywords(
   };
 }
 
-
 export function findSkills(text: string): string[] {
   return [...new Set(findSpans(normalize(text)).map((s) => s.name))];
 }
@@ -183,12 +199,10 @@ export function hasSkill(text: string, skill: string): boolean {
   return !!entry && entry.regex.test(normalize(text));
 }
 
-
 export type Evidence = {
   phrase: string;
   section: "required" | "preferred" | null;
 };
-
 
 function headerSection(line: string): Evidence["section"] | undefined {
   if (line.length >= 60 || findSpans(line).length > 0) return undefined;
@@ -200,10 +214,9 @@ function headerSection(line: string): Evidence["section"] | undefined {
   if (/[.!?]$/.test(line)) return undefined;
   if (preferred) return "preferred";
   if (required) return "required";
-  if (NEUTRAL_HEADER.test(line)) return null;  
+  if (NEUTRAL_HEADER.test(line)) return null;
   return undefined;
 }
-
 
 export function findEvidence(skills: string[], text: string): Evidence {
   const regexes = skills
@@ -212,7 +225,11 @@ export function findEvidence(skills: string[], text: string): Evidence {
   if (regexes.length === 0) return { phrase: "", section: null };
 
   let section: Evidence["section"] = null;
-  let best: { phrase: string; section: Evidence["section"]; hits: number } | null = null;
+  let best: {
+    phrase: string;
+    section: Evidence["section"];
+    hits: number;
+  } | null = null;
 
   for (const raw of text.split(/\r?\n/)) {
     const line = normalize(raw).replace(BULLET, "");
@@ -235,5 +252,7 @@ export function findEvidence(skills: string[], text: string): Evidence {
     }
   }
 
-  return best ? { phrase: best.phrase, section: best.section } : { phrase: "", section: null };
+  return best
+    ? { phrase: best.phrase, section: best.section }
+    : { phrase: "", section: null };
 }
