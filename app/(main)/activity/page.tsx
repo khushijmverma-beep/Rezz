@@ -9,6 +9,7 @@ import {
   getAnalyses,
   activityTotal,
   localDateKey,
+  reconcileActivityDays,
   type ActivityDay,
   type SavedAnalysis,
 } from "@/lib/activity";
@@ -150,6 +151,7 @@ export default function ActivityPage() {
   const uid = user?.uid;
 
   const [days, setDays] = useState<ActivityDay[]>([]);
+  const [repairedDates, setRepairedDates] = useState<string[]>([]);
   const [analyses, setAnalyses] = useState<SavedAnalysis[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [selectedResumeId, setSelectedResumeId] = useState("");
@@ -179,7 +181,9 @@ export default function ActivityPage() {
 
         if (cancelled) return;
 
-        setDays(activity);
+        const reconciled = reconcileActivityDays(activity, scans);
+        setDays(reconciled.days);
+        setRepairedDates(reconciled.repairedDates);
         setAnalyses(scans);
         setDrafts(resumes);
       } catch (err) {
@@ -351,6 +355,15 @@ export default function ActivityPage() {
         ))}
       </div>
 
+      {repairedDates.length > 0 && (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          Recovered scan activity on {repairedDates.length} day(s) from saved
+          analysis records. The Firestore activity counter was lower than the
+          number of saved scans. Edits and exports cannot be reconstructed
+          without their own activity logs.
+        </p>
+      )}
+
       <ActivityHeatmap days={days} />
 
       <section className="space-y-4">
@@ -402,7 +415,8 @@ export default function ActivityPage() {
             <table className="w-full text-left text-sm">
               <thead className="border-b bg-gray-50 text-gray-600">
                 <tr>
-                  <th className="p-3">Date</th>
+                  <th className="p-3">Scan</th>
+                  <th className="p-3">Date &amp; Time</th>
                   <th className="p-3">Job Title</th>
                   <th className="p-3">ATS</th>
                   <th className="p-3">Recruiter</th>
@@ -411,14 +425,15 @@ export default function ActivityPage() {
               </thead>
               <tbody>
                 {[...selectedScans]
-                  .sort((a, b) => b.createdAt - a.createdAt)
-                  .map((scan) => (
+                  .sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id))
+                  .map((scan, index) => ({ scan, index }))
+                  .reverse()
+                  .map(({ scan, index }) => (
                     <tr key={scan.id} className="border-b">
+                      <td className="p-3">{`Scan ${index + 1}`}</td>
                       <td className="p-3">
                         {scan.createdAt
-                          ? new Date(
-                              scan.createdAt
-                            ).toLocaleDateString()
+                          ? new Date(scan.createdAt).toLocaleString()
                           : "Unknown"}
                       </td>
                       <td className="p-3">

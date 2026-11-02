@@ -1,0 +1,54 @@
+
+{
+  "id": "srisastha-001",
+  "resumeText": "Alex Morgan\nDallas, TX | (555) 010-0201 | alex.morgan@example.com\n\nEducation\nSample Community College\nAssociate Degree in General Studies, 2026\n\nExperience\nSample Retail Store\nRetail Associate, June 2024 - Present\n- Responsible for helping customers.\n- Worked with other employees.\n- Handled daily store tasks.\n\nSkills\nCustomer Service, Communication, Cash Handling",
+  "jobDescription": "Junior Software Developer\n\nWe are looking for a developer to build and maintain web applications.\n\nRequirements:\n- Experience with JavaScript and Python\n- Knowledge of SQL databases\n- Familiarity with Git and GitHub\n- Understanding of REST APIs\n- Experience with debugging and software testing\n- Ability to work with development teams",
+  "templateId": "simple",
+  "humanAtsScore": 1,
+  "humanRecruiterScore": 1,
+  "notes": "Weak match. The resume contains almost none of the technical skills required for the software developer position. Both scores should be low.",
+  "resumeData": {
+    "firstName": "Alex",
+    "lastName": "Morgan",
+    "email": "alex.morgan@example.com",
+    "phone": "(555) 010-0201",
+    "location": "Dallas, TX",
+    "linkedin": "",
+    "github": "",
+    "website": "",
+    "summary": "",
+    "experience": [
+      {
+        "company": "Sample Retail Store",
+        "title": "Retail Associate",
+        "location": "Dallas, TX",
+        "startDate": "June 2024",
+        "endDate": "Present",
+        "bullets": [
+          "Responsible for helping customers.",
+          "Worked with other employees.",
+          "Handled daily store tasks."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "Sample Community College",
+        "degree": "Associate Degree",
+        "field": "General Studies",
+        "startDate": "",
+        "endDate": "2026",
+        "gpa": ""
+      }
+    ],
+    "skills": [
+      "Customer Service",
+      "Communication",
+      "Cash Handling"
+    ],
+    "projects": [],
+    "awards": [],
+    "certifications": [],
+    "languages": ["English"]
+  }
+}

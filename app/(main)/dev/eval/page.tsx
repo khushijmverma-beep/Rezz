@@ -37,13 +37,14 @@ async function evaluatePairs(): Promise<{
   version: string;
 }> {
   const directory = path.join(process.cwd(), "evals", "pairs");
-  const files = (await readdir(directory)).filter((file) =>
-    file.endsWith(".json")
-  );
+  const files = (await readdir(directory))
+    .filter((file) => file.endsWith(".json"))
+    .sort();
 
   const rows: EvalRow[] = [];
   const errors: string[] = [];
   const versions = new Set<string>();
+  const seenIds = new Set<string>();
 
   for (const file of files) {
     try {
@@ -67,6 +68,11 @@ async function evaluatePairs(): Promise<{
       ) {
         throw new Error("Invalid evaluation pair");
       }
+
+      if (seenIds.has(pair.id)) {
+        throw new Error(`Duplicate evaluation ID: ${pair.id}`);
+      }
+      seenIds.add(pair.id);
 
       // A structured resume is required for accurate scoring.
       if (!pair.resumeData) {

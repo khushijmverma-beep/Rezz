@@ -1,0 +1,74 @@
+
+{
+  "id": "srisastha-002",
+  "resumeText": "Jordan Lee\nDallas, TX | (555) 010-0202 | jordan.lee@example.com\n\nEducation\nSample State University\nBachelor of Science in Computer Science, Expected May 2027\nGPA: 3.8\n\nTechnical Skills\nPython, JavaScript, TypeScript, React, Next.js, SQL, PostgreSQL, Git, Docker, REST APIs, Unit Testing\n\nExperience\nExample Software Company\nSoftware Engineering Intern, May 2026 - August 2026\n- Developed 5 REST API endpoints using Python and PostgreSQL.\n- Reduced API response time by 30% through query optimization.\n- Wrote 25 automated tests and reviewed pull requests using Git.\n- Collaborated with 4 developers to release new application features.\n\nProjects\nTask Management Application\n- Built a full-stack task manager using React, Next.js, and PostgreSQL.\n- Implemented authentication and REST APIs for 100 test accounts.\n- Deployed the application using Docker.\n\nStudent Portfolio\n- Developed a responsive portfolio using TypeScript and React.\n- Used GitHub for version control and documentation.",
+  "jobDescription": "Software Engineering Intern\n\nRequirements:\n- Currently pursuing a Computer Science or related degree\n- Experience with Python or JavaScript\n- Experience building REST APIs\n- Familiarity with React and SQL databases\n- Knowledge of Git and version control\n- Experience writing automated tests\n- Strong teamwork and communication skills\n\nPreferred:\n- Docker experience\n- Experience optimizing application performance",
+  "templateId": "simple",
+  "humanAtsScore": 5,
+  "humanRecruiterScore": 5,
+  "notes": "Strong match. The applicant meets almost all technical requirements and demonstrates relevant experience, projects, testing, teamwork, and measurable improvements.",
+  "resumeData": {
+    "firstName": "Jordan",
+    "lastName": "Lee",
+    "email": "jordan.lee@example.com",
+    "phone": "(555) 010-0202",
+    "location": "Dallas, TX",
+    "linkedin": "",
+    "github": "",
+    "website": "",
+    "summary": "",
+    "experience": [
+      {
+        "company": "Example Software Company",
+        "title": "Software Engineering Intern",
+        "location": "Dallas, TX",
+        "startDate": "May 2026",
+        "endDate": "August 2026",
+        "bullets": [
+          "Developed 5 REST API endpoints using Python and PostgreSQL.",
+          "Reduced API response time by 30% through query optimization.",
+          "Wrote 25 automated tests and reviewed pull requests using Git.",
+          "Collaborated with 4 developers to release new application features."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "Sample State University",
+        "degree": "Bachelor of Science",
+        "field": "Computer Science",
+        "startDate": "",
+        "endDate": "May 2027",
+        "gpa": "3.8"
+      }
+    ],
+    "skills": [
+      "Python",
+      "JavaScript",
+      "TypeScript",
+      "React",
+      "Next.js",
+      "SQL",
+      "PostgreSQL",
+      "Git",
+      "Docker",
+      "REST APIs",
+      "Unit Testing"
+    ],
+    "projects": [
+      {
+        "name": "Task Management Application",
+        "link": "",
+        "description": "Built a full-stack task manager using React, Next.js, and PostgreSQL. Implemented authentication and REST APIs for 100 test accounts. Deployed using Docker."
+      },
+      {
+        "name": "Student Portfolio",
+        "link": "",
+        "description": "Developed a responsive portfolio using TypeScript and React. Used GitHub for version control and documentation."
+      }
+    ],
+    "awards": [],
+    "certifications": [],
+    "languages": ["English"]
+  }
+}
