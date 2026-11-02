@@ -310,25 +310,6 @@ ${jobDescription}
 </job_description>`;
 }
 
-function responseForLLMError(err: GeminiError): Response {
-  if (err.message === "Could not reach Gemini") {
-    return Response.json({ error: "Could not reach gemini" }, { status: 502 });
-  }
-  if (err.message === "Gemini returned a non-JSON response") {
-    return Response.json(
-      { error: "Gemini returned an invalid response" },
-      { status: 502 },
-    );
-  }
-  if (err.message === "Gemini returned no text") {
-    return Response.json({ error: "Gemini returned no text" }, { status: 502 });
-  }
-  return Response.json(
-    { error: "The AI service had a problem. Please try again." },
-    { status: err.status === 429 || err.status === 503 ? err.status : 502 },
-  );
-}
-
 async function verifyUser(req: Request): Promise<string | null> {
   const header = req.headers.get("authorization") ?? "";
   const match = header.match(/^Bearer (.+)$/);
@@ -369,10 +350,6 @@ async function verifyUser(req: Request): Promise<string | null> {
 const MAX_CHARS = 20_000;
 
 export async function POST(req: Request) {
-  if (!hasConfiguredAIProvider()) {
-    return Response.json({ error: "AI isn't configured" }, { status: 500 });
-  }
-
   if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
     return Response.json(
       {
@@ -450,26 +427,30 @@ export async function POST(req: Request) {
     bulletLines,
   );
 
-  let text: string;
-  try {
-    text = await callLLM(prompt);
-  } catch (err) {
-    if (err instanceof GeminiError) {
-      return responseForLLMError(err);
+  let parsed: ModelOutput | null = null;
+  if (hasConfiguredAIProvider()) {
+    try {
+      const text = await callLLM(prompt);
+      parsed = parseModelOutput(text);
+      if (!parsed)
+        console.error(
+          "[scanner] AI returned invalid JSON, using code-only scores",
+        );
+    } catch (err) {
+      const status = err instanceof GeminiError ? err.status : "unknown";
+      console.error(
+        `[scanner] AI call failed (status ${status}), using code-only scores`,
+      );
     }
-    console.error(err);
-    return Response.json({ error: "Gemini call failed" }, { status: 500 });
-  }
-  const parsed = parseModelOutput(text);
-  if (!parsed) {
-    return Response.json(
-      { error: "The AI did not return valid JSON" },
-      { status: 502 },
+  } else {
+    console.error(
+      "[scanner] No AI provider configured, using code-only scores",
     );
   }
+  const aiUnavailable = parsed === null;
 
   const modelGaps = new Map(
-    parsed.skillGaps.map((g) => [g.skill.toLowerCase(), g]),
+    (parsed?.skillGaps ?? []).map((g) => [g.skill.toLowerCase(), g]),
   );
   const unmet = keywords.requirements.filter((r) => !r.met);
   const missingSkills = unmet.flatMap((r) => r.skills);
@@ -506,7 +487,7 @@ export async function POST(req: Request) {
     return false;
   };
 
-  const suggestedRewordings = parsed.suggestedRewordings
+  const suggestedRewordings = (parsed?.suggestedRewordings ?? [])
     .filter((r) => {
       const original = stripBullet(r.original);
       const key = lineKey(original);
@@ -525,12 +506,12 @@ export async function POST(req: Request) {
     .slice(0, 3);
 
   console.log("rewordings", {
-    fromAI: parsed.suggestedRewordings.length,
+    fromAI: parsed?.suggestedRewordings.length ?? 0,
     kept: suggestedRewordings.length,
     rejected,
   });
 
-  const strengths = parsed.strengths
+  const strengths = (parsed?.strengths ?? [])
     .filter((s) => contains(resume, s.evidence))
     .slice(0, 5);
 
@@ -538,7 +519,7 @@ export async function POST(req: Request) {
   const metCount = total - unmet.length;
   const keywordScore = total === 0 ? 100 : Math.round((metCount / total) * 100);
 
-  const honestActions = parsed.actionItems.filter(
+  const honestActions = (parsed?.actionItems ?? []).filter(
     (item) => !claimsMissingSkill(item, missingSkills),
   );
   const actionItems =
@@ -561,8 +542,9 @@ export async function POST(req: Request) {
     emptyReasons.skillGaps = reason;
   }
   if (suggestedRewordings.length === 0) {
-    emptyReasons.suggestedRewordings =
-      "No safe rewordings found for this job description.";
+    emptyReasons.suggestedRewordings = aiUnavailable
+      ? "AI suggestions are unavailable right now. Try again in a minute."
+      : "No safe rewordings found for this job description.";
   }
 
   const scores = body.data
@@ -570,27 +552,31 @@ export async function POST(req: Request) {
         data: body.data,
         templateId: body.templateId ?? "",
         jobDescription: jd,
-        ai: parsed.recruiterRead,
+        ai: parsed?.recruiterRead ?? null,
       })
     : null;
 
-  const matchScore = parsed.overallFit.matchScore || keywordScore;
+  const matchScore = parsed?.overallFit.matchScore || keywordScore;
   const result: JobMatchResult = {
     missingKeywords: keywords.missing,
     matchedKeywords: keywords.matched,
     skillGaps,
     suggestedRewordings,
     strengths,
-    categoryScores: { ...parsed.categoryScores, keywords: keywordScore },
+    categoryScores: {
+      ...(parsed?.categoryScores ?? { skills: 0, experience: 0, education: 0 }),
+      keywords: keywordScore,
+    },
     actionItems,
     overallFit: {
       matchScore,
       rating: toRating(matchScore),
       summary:
-        parsed.overallFit.summary ||
+        parsed?.overallFit.summary ||
         `Your resume matches ${metCount} of ${total} requirements this posting lists.`,
     },
     emptyReasons,
+    aiUnavailable,
     ...(scores ?? {}),
   };
 

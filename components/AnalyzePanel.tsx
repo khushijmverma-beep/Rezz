@@ -325,6 +325,9 @@ export default function AnalyzePanel({
               <>
                 <ScoreView title="ATS score" section={result.ats} />
                 <ScoreView title="Recruiter score" section={result.human} />
+                {result.aiUnavailable && (
+                  <p className={styles.emptyNote}>AI judgement unavailable. This score uses code checks only.</p>
+                )}
                 {onFeedback && <FeedbackBox onSubmit={onFeedback} />}
                 {topFixes.length > 0 && (
                   <section className={styles.resultSection}>
