@@ -12,7 +12,7 @@ type DownloadMenuProps = {
   onExport: () => void;
   // Replaces the trigger button's default classes, e.g. to match a toolbar.
   buttonClassName?: string;
-  // Show only a download icon; the menu then opens left-aligned under it.
+  // Show only a download icon (with an accessible label and tooltip).
   iconOnly?: boolean;
 };
 
@@ -85,14 +85,14 @@ export default function DownloadMenu({
         {iconOnly ? <DownloadIcon size={18} aria-hidden="true" /> : "Download"}
       </button>
       {error && (
-        <p role="alert" className={`absolute ${iconOnly ? "left-0" : "right-0"} mt-2 w-56 text-xs text-red-600`}>
+        <p role="alert" className="absolute right-0 mt-2 w-56 text-xs text-red-600">
           {error}
         </p>
       )}
       {isOpen && (
         <div
           role="menu"
-          className={`absolute ${iconOnly ? "left-0" : "right-0"} z-20 mt-2 w-44 rounded-lg border border-gray-200 bg-white p-1 shadow-lg`}
+          className="absolute right-0 z-20 mt-2 w-44 rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
         >
           <button
             type="button"

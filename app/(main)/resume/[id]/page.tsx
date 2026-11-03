@@ -484,15 +484,15 @@ export default function ResumeDetailPage() {
                   ? "Saved"
                   : "Couldn't save, retrying"}
             </span>
-            <DownloadMenu
-              title={title}
-              data={data}
-              downloadPdf={downloadPdf}
-              onExport={() => trackActivity(user.uid, "export")}
-              buttonClassName={`${styles.actionButton} ${styles.iconButton}`}
-              iconOnly
-            />
             <div className={styles.toolbarActions}>
+              <DownloadMenu
+                title={title}
+                data={data}
+                downloadPdf={downloadPdf}
+                onExport={() => trackActivity(user.uid, "export")}
+                buttonClassName={`${styles.actionButton} ${styles.iconButton}`}
+                iconOnly
+              />
               <button
                 type="button"
                 onClick={() => setTemplateDialogOpen(true)}

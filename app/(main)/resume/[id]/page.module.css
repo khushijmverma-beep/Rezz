@@ -195,9 +195,9 @@
 
 /* Docs-style title: reads as text until hovered or focused. */
 .titleInput {
-  flex: 0 1 28rem;
+  flex: 0 1 11rem;
   min-width: 6rem;
-  max-width: 28rem;
+  max-width: 11rem;
   height: 2.125rem;
   padding: 0 0.5rem;
   border: 1px solid transparent;
