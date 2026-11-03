@@ -148,7 +148,7 @@ export default function ReportExpanded({ result, onClose }: ReportExpandedProps)
                                     <h3 className={styles.sectionHeading}>Top fixes</h3>
                                     {topFixes.length === 0 ? (
                                         <p className={styles.emptyNote}>
-                                            No fixes to suggest. Every check passed or couldn't gain more points.
+                                            No fixes to suggest. Every check passed or couldn&apos;t gain more points.
                                         </p>
                                     ) : (
                                         <ol className={styles.fixList}>
@@ -180,7 +180,7 @@ export default function ReportExpanded({ result, onClose }: ReportExpandedProps)
                         <>
                             <p className={styles.subLabel}>In your resume</p>
                             {result.matchedKeywords.length === 0 ? (
-                                <p className={styles.emptyNote}>None of the posting's skills were found.</p>
+                                <p className={styles.emptyNote}>None of the posting&apos;s skills were found.</p>
                             ) : (
                                 <ul className={styles.tagList}>
                                     {result.matchedKeywords.map((k) => (

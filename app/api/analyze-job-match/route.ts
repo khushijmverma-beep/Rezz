@@ -1,3 +1,4 @@
+import { checkRateLimit } from "@/lib/rateLimit";
 import {
   compareKeywords,
   findEvidence,
@@ -192,6 +193,43 @@ function addsNothingNew(original: string, suggested: string): boolean {
   return true;
 }
 
+const STOP = new Set([
+  "a",
+  "an",
+  "the",
+  "and",
+  "or",
+  "to",
+  "of",
+  "for",
+  "in",
+  "on",
+  "by",
+  "with",
+  "through",
+  "via",
+  "using",
+  "that",
+  "which",
+  "as",
+  "at",
+  "from",
+]);
+const contentWords = (s: string) =>
+  lower(s)
+    .split(/[^a-z0-9+#.%-]+/)
+    .filter((w) => w && !STOP.has(w));
+
+const WEAK_START =
+  /^(responsible for|worked on|helped|assisted|duties included|tasked with|involved in|participated in)\b/i;
+
+function isRealRewording(original: string, suggested: string): boolean {
+  if (WEAK_START.test(original) && !WEAK_START.test(suggested)) return true;
+  const before = new Set(contentWords(original));
+  const added = contentWords(suggested).filter((w) => !before.has(w));
+  return added.length >= 3;
+}
+
 function claimsMissingSkill(item: string, missing: string[]): boolean {
   const mentioned = findSkills(item);
   if (!mentioned.some((skill) => missing.includes(skill))) return false;
@@ -309,28 +347,62 @@ ${jobDescription}
 </job_description>`;
 }
 
-function responseForLLMError(err: GeminiError): Response {
-  if (err.message === "Could not reach Gemini") {
-    return Response.json({ error: "Could not reach gemini" }, { status: 502 });
-  }
-  if (err.message === "Gemini returned a non-JSON response") {
-    return Response.json(
-      { error: "Gemini returned an invalid response" },
-      { status: 502 },
+async function verifyUser(req: Request): Promise<string | null> {
+  const header = req.headers.get("authorization") ?? "";
+  const match = header.match(/^Bearer (.+)$/);
+  if (!match) return null;
+
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  if (!apiKey) {
+    console.error(
+      "[auth] NEXT_PUBLIC_FIREBASE_API_KEY is not set. Add it to .env.local and restart the dev server.",
     );
+    return null;
   }
-  if (err.message === "Gemini returned no text") {
-    return Response.json({ error: "Gemini returned no text" }, { status: 502 });
+
+  try {
+    const res = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken: match[1] }),
+        cache: "no-store",
+      },
+    );
+    if (!res.ok) {
+      if (res.status !== 400) {
+        console.error(`[auth] Firebase accounts:lookup returned ${res.status}`);
+      }
+      return null;
+    }
+    const data = (await res.json()) as { users?: { localId?: string }[] };
+    return data.users?.[0]?.localId ?? null;
+  } catch {
+    console.error("[auth] Could not reach Firebase accounts:lookup");
+    return null;
   }
-  return Response.json(
-    { error: "The AI service had a problem. Please try again." },
-    { status: err.status === 429 || err.status === 503 ? err.status : 502 },
-  );
 }
 
+const MAX_CHARS = 20_000;
+
 export async function POST(req: Request) {
-  if (!hasConfiguredAIProvider()) {
-    return Response.json({ error: "AI isn't configured" }, { status: 500 });
+  if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+    return Response.json(
+      {
+        error:
+          "Server auth isn't configured. Check NEXT_PUBLIC_FIREBASE_API_KEY.",
+      },
+      { status: 500 },
+    );
+  }
+
+  const uid = await verifyUser(req);
+  if (!uid) {
+    return Response.json(
+      { error: "Please log in again.", code: "UNAUTHENTICATED" },
+      { status: 401 },
+    );
   }
 
   let body: unknown;
@@ -355,6 +427,27 @@ export async function POST(req: Request) {
 
   const resume = body.data ? resumeToText(body.data) : (body.resumeText ?? "");
   const jd = body.jobDescription;
+  if (resume.length > MAX_CHARS || jd.length > MAX_CHARS) {
+    return Response.json(
+      {
+        error: `Resume and job description must each be under ${MAX_CHARS.toLocaleString()} characters.`,
+        code: "TOO_LONG",
+      },
+      { status: 413 },
+    );
+  }
+
+  const limit = checkRateLimit(uid);
+  if (!limit.allowed) {
+    return Response.json(
+      {
+        error: "Too many analyses.",
+        code: "RATE_LIMITED",
+        retryAfter: limit.retryAfter,
+      },
+      { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+    );
+  }
   const bulletLines = body.data
     ? [
         ...bullets(body.data),
@@ -371,26 +464,30 @@ export async function POST(req: Request) {
     bulletLines,
   );
 
-  let text: string;
-  try {
-    text = await callLLM(prompt);
-  } catch (err) {
-    if (err instanceof GeminiError) {
-      return responseForLLMError(err);
+  let parsed: ModelOutput | null = null;
+  if (hasConfiguredAIProvider()) {
+    try {
+      const text = await callLLM(prompt);
+      parsed = parseModelOutput(text);
+      if (!parsed)
+        console.error(
+          "[scanner] AI returned invalid JSON, using code-only scores",
+        );
+    } catch (err) {
+      const status = err instanceof GeminiError ? err.status : "unknown";
+      console.error(
+        `[scanner] AI call failed (status ${status}), using code-only scores`,
+      );
     }
-    console.error(err);
-    return Response.json({ error: "Gemini call failed" }, { status: 500 });
-  }
-  const parsed = parseModelOutput(text);
-  if (!parsed) {
-    return Response.json(
-      { error: "The AI did not return valid JSON" },
-      { status: 502 },
+  } else {
+    console.error(
+      "[scanner] No AI provider configured, using code-only scores",
     );
   }
+  const aiUnavailable = parsed === null;
 
   const modelGaps = new Map(
-    parsed.skillGaps.map((g) => [g.skill.toLowerCase(), g]),
+    (parsed?.skillGaps ?? []).map((g) => [g.skill.toLowerCase(), g]),
   );
   const unmet = keywords.requirements.filter((r) => !r.met);
   const missingSkills = unmet.flatMap((r) => r.skills);
@@ -427,7 +524,7 @@ export async function POST(req: Request) {
     return false;
   };
 
-  const suggestedRewordings = parsed.suggestedRewordings
+  const suggestedRewordings = (parsed?.suggestedRewordings ?? [])
     .filter((r) => {
       const original = stripBullet(r.original);
       const key = lineKey(original);
@@ -441,17 +538,19 @@ export async function POST(req: Request) {
         return reject("unchanged");
       if (!addsNothingNew(original, r.suggested))
         return reject("adds new facts");
+      if (!isRealRewording(original, r.suggested))
+        return reject("too small a change");
       return true;
     })
     .slice(0, 3);
 
   console.log("rewordings", {
-    fromAI: parsed.suggestedRewordings.length,
+    fromAI: parsed?.suggestedRewordings.length ?? 0,
     kept: suggestedRewordings.length,
     rejected,
   });
 
-  const strengths = parsed.strengths
+  const strengths = (parsed?.strengths ?? [])
     .filter((s) => contains(resume, s.evidence))
     .slice(0, 5);
 
@@ -459,7 +558,7 @@ export async function POST(req: Request) {
   const metCount = total - unmet.length;
   const keywordScore = total === 0 ? 100 : Math.round((metCount / total) * 100);
 
-  const honestActions = parsed.actionItems.filter(
+  const honestActions = (parsed?.actionItems ?? []).filter(
     (item) => !claimsMissingSkill(item, missingSkills),
   );
   const actionItems =
@@ -482,8 +581,9 @@ export async function POST(req: Request) {
     emptyReasons.skillGaps = reason;
   }
   if (suggestedRewordings.length === 0) {
-    emptyReasons.suggestedRewordings =
-      "No safe rewordings found for this job description.";
+    emptyReasons.suggestedRewordings = aiUnavailable
+      ? "AI suggestions are unavailable right now. Try again in a minute."
+      : "No safe rewordings found for this job description.";
   }
 
   const scores = body.data
@@ -491,27 +591,31 @@ export async function POST(req: Request) {
         data: body.data,
         templateId: body.templateId ?? "",
         jobDescription: jd,
-        ai: parsed.recruiterRead,
+        ai: parsed?.recruiterRead ?? null,
       })
     : null;
 
-  const matchScore = parsed.overallFit.matchScore || keywordScore;
+  const matchScore = parsed?.overallFit.matchScore || keywordScore;
   const result: JobMatchResult = {
     missingKeywords: keywords.missing,
     matchedKeywords: keywords.matched,
     skillGaps,
     suggestedRewordings,
     strengths,
-    categoryScores: { ...parsed.categoryScores, keywords: keywordScore },
+    categoryScores: {
+      ...(parsed?.categoryScores ?? { skills: 0, experience: 0, education: 0 }),
+      keywords: keywordScore,
+    },
     actionItems,
     overallFit: {
       matchScore,
       rating: toRating(matchScore),
       summary:
-        parsed.overallFit.summary ||
+        parsed?.overallFit.summary ||
         `Your resume matches ${metCount} of ${total} requirements this posting lists.`,
     },
     emptyReasons,
+    aiUnavailable,
     ...(scores ?? {}),
   };
 

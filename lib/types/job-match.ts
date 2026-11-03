@@ -79,6 +79,7 @@ export type JobMatchResult = {
     actionItems: string[];
     overallFit: OverallFit;
     emptyReasons: EmptyReasons;
+    aiUnavailable?: boolean;
 } & Partial<ScoreResult>;
 
 export type ScoreResult = {
