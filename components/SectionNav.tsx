@@ -5,11 +5,13 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 
 type SectionNavProps = {
   sections: { id: string; label: string }[];
+  // false when the page has its own show/hide control (the editor's side panel).
+  collapsible?: boolean;
 };
 
 // A list of section links, like "Document tabs" in Google Docs. The section
 // nearest the top of the screen is highlighted as you scroll.
-export default function SectionNav({ sections }: SectionNavProps) {
+export default function SectionNav({ sections, collapsible = true }: SectionNavProps) {
   const [activeId, setActiveId] = useState(sections[0]?.id ?? "");
   const [open, setOpen] = useState(true);
 
@@ -48,18 +50,24 @@ export default function SectionNav({ sections }: SectionNavProps) {
 
   return (
     <nav aria-label="Sections" className="rounded-lg border border-gray-300 bg-white p-3">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-controls="section-nav-list"
-        className="flex w-full cursor-pointer items-center justify-between rounded px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:bg-gray-100"
-      >
-        Sections
-        {open ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
-      </button>
+      {!collapsible ? (
+        <div className="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          Sections
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-controls="section-nav-list"
+          className="flex w-full cursor-pointer items-center justify-between rounded px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:bg-gray-100"
+        >
+          Sections
+          {open ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
+        </button>
+      )}
 
-      {open && (
+      {(open || !collapsible) && (
         <ul id="section-nav-list" className="mt-2 space-y-1">
           {sections.map((s) => {
             const active = s.id === activeId;

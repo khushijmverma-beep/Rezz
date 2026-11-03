@@ -9,6 +9,8 @@ type DownloadMenuProps = {
   data: ResumeData;
   downloadPdf: (title: string) => void;
   onExport: () => void;
+  // Replaces the trigger button's default classes, e.g. to match a toolbar.
+  buttonClassName?: string;
 };
 
 function sanitizeFilename(title: string): string {
@@ -28,6 +30,7 @@ export default function DownloadMenu({
   data,
   downloadPdf,
   onExport,
+  buttonClassName,
 }: DownloadMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState("");
@@ -68,7 +71,10 @@ export default function DownloadMenu({
         aria-haspopup="menu"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((open) => !open)}
-        className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        className={
+          buttonClassName ??
+          "rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        }
       >
         Download
       </button>
