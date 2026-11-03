@@ -483,31 +483,28 @@ export default function ResumeDetailPage() {
               : "Couldn't save, retrying"}
         </span>
         <div className={styles.toolbarActions}>
-          <div className={styles.templateAction}>
-            <button
-              type="button"
-              onClick={() => setTemplateDialogOpen(true)}
-              className={styles.actionButton}
-            >
-              Change template
-            </button>
-          </div>
           <button
             type="button"
-            className={`${styles.actionButton} ${styles.copyAction}`}
+            onClick={() => setTemplateDialogOpen(true)}
+            className={styles.actionButton}
+          >
+            Change template
+          </button>
+          <button
+            type="button"
+            className={styles.actionButton}
             onClick={() => void handleMakeCopy()}
             disabled={copying || saveStatus !== "saved"}
           >
             {copying ? "Copying..." : "Make a copy"}
           </button>
-          <div className={styles.downloadAction}>
-            <DownloadMenu
-              title={title}
-              data={data}
-              downloadPdf={downloadPdf}
-              onExport={() => trackActivity(user.uid, "export")}
-            />
-          </div>
+          <DownloadMenu
+            title={title}
+            data={data}
+            downloadPdf={downloadPdf}
+            onExport={() => trackActivity(user.uid, "export")}
+            buttonClassName={styles.actionButton}
+          />
         </div>
         <details className={styles.styleDisclosure}>
           <summary className={styles.styleSummary}>
