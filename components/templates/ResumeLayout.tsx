@@ -24,8 +24,8 @@ const contactLabels: Record<(typeof contactKeys)[number], string> = {
   website: "Website",
 };
 
-function hasText(value: string) {
-  return value.trim().length > 0;
+function hasText(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 function lines(value: string) {
@@ -110,9 +110,9 @@ export default function ResumeLayout({
       />
     ) : null;
 
-  const section = (title: string, visible: boolean, children: ReactNode) =>
+  const section = (title: string, visible: boolean, children: ReactNode, id?: string) =>
     (editable || visible) && (
-      <section className={styles.section}>
+      <section id={editable ? id : undefined} className={styles.section}>
         <h2>{title}</h2>
         {children}
       </section>
@@ -157,6 +157,7 @@ export default function ResumeLayout({
     field(data.skills.join(", "), "Skills, separated by commas", (value) =>
       update("skills", listFromCommas(value)),
     ),
+    "skills",
   );
 
   const awards = section(
@@ -165,6 +166,7 @@ export default function ResumeLayout({
     field(data.awards.join(", "), "Awards, separated by commas", (value) =>
       update("awards", listFromCommas(value)),
     ),
+    "awards",
   );
 
   const extraFields = (["certifications", "languages"] as const).map((key) => {
@@ -174,6 +176,7 @@ export default function ResumeLayout({
       values.length > 0,
       field(values.join(", "), `${key}, separated by commas`, (value) =>
         update(key, listFromCommas(value))),
+      key,
     )}</div>;
   });
 
@@ -267,6 +270,7 @@ export default function ResumeLayout({
       )}
       {add("experience", () => update("experience", [...data.experience, emptyExperience()]))}
     </>,
+    "experience",
   );
 
   const education = section(
@@ -357,6 +361,7 @@ export default function ResumeLayout({
       {editable && !data.education.length && <p className={styles.placeholder}>School · Degree</p>}
       {add("education", () => update("education", [...data.education, emptyEducation()]))}
     </>,
+    "education",
   );
 
   const projects = section(
@@ -402,6 +407,7 @@ export default function ResumeLayout({
       )}
       {add("project", () => update("projects", [...data.projects, emptyProject()]))}
     </>,
+    "projects",
   );
 
   const body = (
@@ -410,6 +416,7 @@ export default function ResumeLayout({
         variant === "engineer" || variant === "ats-standard" ? "Summary" : "Profile",
         hasText(data.summary),
         field(data.summary, "Professional summary", (value) => update("summary", value)),
+        "profile",
       )}
       {experience}
       {education}
