@@ -1,9 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Copy, LayoutTemplate } from "lucide-react";
 import AnalyzePanel from "@/components/AnalyzePanel";
+import { useTopBarSlot } from "@/components/AppTopBar";
 import ChangeTemplateDialog from "@/components/ChangeTemplateDialog";
 import DownloadMenu from "@/components/DownloadMenu";
 import SectionNav from "@/components/SectionNav";
@@ -104,6 +107,7 @@ export default function ResumeDetailPage() {
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [copying, setCopying] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
+  const topBarSlot = useTopBarSlot();
   const [sectionsOpen, setSectionsOpen] = useState(true);
   const [analysisOpen, setAnalysisOpen] = useState(true);
   const previewFrameRef = useRef<HTMLDivElement>(null);
@@ -457,55 +461,64 @@ export default function ResumeDetailPage() {
               : ""
       }`}
     >
+      {/* Title, status and actions render into the app's top bar, next to the logo. */}
+      {topBarSlot &&
+        createPortal(
+          <div className={styles.topBarContent}>
+            <input
+              className={styles.titleInput}
+              id="resume-title-input"
+              aria-label="Resume title"
+              value={title}
+              onChange={(event) => {
+                const nextTitle = event.target.value;
+                titleRef.current = nextTitle;
+                setTitle(nextTitle);
+                setSaveStatus("saving");
+              }}
+            />
+            <span className={styles.saveStatus} aria-live="polite">
+              {saveStatus === "saving"
+                ? "Saving..."
+                : saveStatus === "saved"
+                  ? "Saved"
+                  : "Couldn't save, retrying"}
+            </span>
+            <div className={styles.toolbarActions}>
+              <DownloadMenu
+                title={title}
+                data={data}
+                downloadPdf={downloadPdf}
+                onExport={() => trackActivity(user.uid, "export")}
+                buttonClassName={`${styles.actionButton} ${styles.iconButton}`}
+                iconOnly
+              />
+              <button
+                type="button"
+                onClick={() => setTemplateDialogOpen(true)}
+                className={styles.actionButton}
+                aria-label="Change template"
+                title="Change template"
+              >
+                <LayoutTemplate size={16} aria-hidden="true" className={styles.actionIcon} />
+                <span className={styles.actionLabel}>Change template</span>
+              </button>
+              <button
+                type="button"
+                className={styles.actionButton}
+                onClick={() => void handleMakeCopy()}
+                disabled={copying || saveStatus !== "saved"}
+                aria-label={copying ? "Copying..." : "Make a copy"}
+                title="Make a copy"
+              >
+                <Copy size={16} aria-hidden="true" className={styles.actionIcon} />
+                <span className={styles.actionLabel}>{copying ? "Copying..." : "Make a copy"}</span>
+              </button>
+            </div>
+          </div>,
+          topBarSlot,
+        )}
       <header className={styles.toolbar}>
-        <Link className={styles.homeLink} href="/">
-          ← Home
-        </Link>
-        <label className={styles.titleLabel} htmlFor="resume-title-input">
-          Resume title
-        </label>
-        <input
-          className={styles.titleInput}
-          id="resume-title-input"
-          value={title}
-          onChange={(event) => {
-            const nextTitle = event.target.value;
-            titleRef.current = nextTitle;
-            setTitle(nextTitle);
-            setSaveStatus("saving");
-          }}
-        />
-        <span className={styles.saveStatus} aria-live="polite">
-          {saveStatus === "saving"
-            ? "Saving..."
-            : saveStatus === "saved"
-              ? "Saved"
-              : "Couldn't save, retrying"}
-        </span>
-        <div className={styles.toolbarActions}>
-          <button
-            type="button"
-            onClick={() => setTemplateDialogOpen(true)}
-            className={styles.actionButton}
-          >
-            Change template
-          </button>
-          <button
-            type="button"
-            className={styles.actionButton}
-            onClick={() => void handleMakeCopy()}
-            disabled={copying || saveStatus !== "saved"}
-          >
-            {copying ? "Copying..." : "Make a copy"}
-          </button>
-          <DownloadMenu
-            title={title}
-            data={data}
-            downloadPdf={downloadPdf}
-            onExport={() => trackActivity(user.uid, "export")}
-            buttonClassName={styles.actionButton}
-          />
-        </div>
         <details className={styles.styleDisclosure}>
           <summary className={styles.styleSummary}>
             <span>Page style</span>

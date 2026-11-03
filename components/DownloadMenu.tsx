@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Download as DownloadIcon } from "lucide-react";
 import type { ResumeData } from "@/lib/types/resume";
 import { resumeToText } from "@/lib/resumeToText";
 
@@ -11,6 +12,8 @@ type DownloadMenuProps = {
   onExport: () => void;
   // Replaces the trigger button's default classes, e.g. to match a toolbar.
   buttonClassName?: string;
+  // Show only a download icon (with an accessible label and tooltip).
+  iconOnly?: boolean;
 };
 
 function sanitizeFilename(title: string): string {
@@ -31,6 +34,7 @@ export default function DownloadMenu({
   downloadPdf,
   onExport,
   buttonClassName,
+  iconOnly = false,
 }: DownloadMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState("");
@@ -71,12 +75,14 @@ export default function DownloadMenu({
         aria-haspopup="menu"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((open) => !open)}
+        aria-label={iconOnly ? "Download" : undefined}
+        title={iconOnly ? "Download" : undefined}
         className={
           buttonClassName ??
           "rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
         }
       >
-        Download
+        {iconOnly ? <DownloadIcon size={18} aria-hidden="true" /> : "Download"}
       </button>
       {error && (
         <p role="alert" className="absolute right-0 mt-2 w-56 text-xs text-red-600">
