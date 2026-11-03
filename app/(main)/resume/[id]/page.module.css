@@ -169,14 +169,13 @@
   min-width: 0;
 }
 
+/* Now holds only the "Page style" disclosure; the title row moved to the app top bar. */
 .toolbar {
   grid-area: toolbar;
   display: grid;
-  grid-template-columns: auto minmax(9rem, 0.55fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.75rem 1rem;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
-  padding: 0.75rem 1rem;
+  padding: 0 1rem;
   border: 1px solid #dadce0;
   border-radius: 1rem;
   background: #fff;
@@ -184,61 +183,67 @@
   position: relative;
 }
 
-.homeLink {
-  grid-row: 1 / span 2;
-  color: #293449;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-decoration: none;
+/* Title, status, Download and actions, rendered into the app top bar (one row). */
+.topBarContent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
+/* Docs-style title: reads as text until hovered or focused. */
+.titleInput {
+  flex: 0 1 28rem;
+  min-width: 6rem;
+  max-width: 28rem;
+  height: 2.125rem;
+  padding: 0 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.homeLink:hover {
-  text-decoration: underline;
+.titleInput:hover {
+  border-color: var(--border);
 }
 
-.titleLabel {
-  grid-column: 2;
-  color: #687386;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.titleInput {
-  grid-column: 2;
-  width: 100%;
-  min-width: 0;
-  padding: 0.55rem 0.7rem;
-  border: 1px solid #d5d9e0;
-  border-radius: 0.4rem;
-  background: #fff;
-  color: #202124;
-  font: inherit;
-}
-
+.titleInput:focus,
 .titleInput:focus-visible {
-  outline: 3px solid #91b7f4;
-  outline-offset: 2px;
+  border-color: var(--muted);
+  outline: none;
 }
 
-/* Change template, Make a copy and Download sit together at the right of the bar. */
+.saveStatus {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+/* Change template and Make a copy, pushed to the right end of the row. */
 .toolbarActions {
-  position: absolute;
-  top: 1.5rem;
-  right: 1.25rem;
-  left: 50%; /* keeps the group in the right half so it wraps instead of covering the title */
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  flex-shrink: 0;
   align-items: center;
   gap: 0.5rem;
-  min-width: 0;
+  margin-left: auto;
 }
 
 .actionButton {
   display: inline-flex;
   align-items: center;
-  min-height: 2.125rem;
+  justify-content: center;
+  gap: 0.375rem;
+  height: 2.125rem;
   padding: 0 0.75rem;
   border: 1px solid var(--border);
   border-radius: 0.5rem;
@@ -260,17 +265,31 @@
   opacity: 0.5;
 }
 
-.saveStatus {
-  grid-column: 3;
-  grid-row: 2;
-  color: #687386;
-  font-size: 0.8rem;
-  white-space: nowrap;
-  justify-self: start;
-  margin-left: 0.25rem;
+.iconButton {
+  width: 2.125rem;
+  padding: 0;
 }
 
+.actionIcon {
+  flex-shrink: 0;
+}
 
+/* Under 900px the title takes the free space and the two actions become icon-only. */
+@media (max-width: 900px) {
+  .titleInput {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .actionLabel {
+    display: none;
+  }
+
+  .toolbarActions .actionButton {
+    width: 2.125rem;
+    padding: 0;
+  }
+}
 
 .toolbarErrors {
   grid-area: errors;
@@ -287,7 +306,6 @@
 .styleDisclosure {
   grid-column: 1 / -1;
   overflow: hidden;
-  border-top: 1px solid #e8eaed;
 }
 
 .styleSummary {
@@ -296,7 +314,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.75rem 0.25rem 0;
+  padding: 0 0.25rem;
   color: #202124;
   font-size: 0.95rem;
   font-weight: 600;
@@ -505,23 +523,6 @@
     grid-template-columns: 3rem minmax(0, 1fr);
   }
 
-  .toolbar {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .saveStatus {
-    grid-column: 2;
-    grid-row: 3;
-    margin-left: 0;
-  }
-
-  .toolbarActions {
-    position: static;
-    grid-column: 1 / -1;
-    grid-row: 4;
-    justify-content: flex-start;
-  }
-
   .sectionNav :global(nav[aria-label="Sections"]) {
     min-height: 34rem;
   }
@@ -598,35 +599,7 @@
   }
 
   .toolbar {
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 0.5rem;
-    padding: 0.75rem;
-  }
-
-  .homeLink {
-    grid-row: auto;
-  }
-
-  .titleLabel,
-  .titleInput {
-    grid-column: 1 / -1;
-  }
-
-  .toolbarActions {
-    grid-column: 1 / -1;
-    grid-row: 4;
-    gap: 0.35rem;
-  }
-
-  .toolbarActions .actionButton {
-    padding-inline: 0.4rem;
-    font-size: 0.75rem;
-  }
-
-  .saveStatus {
-    grid-column: 1 / -1;
-    grid-row: auto;
-    white-space: normal;
+    padding: 0 0.75rem;
   }
 
   .styleSummary {
