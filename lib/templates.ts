@@ -1,7 +1,6 @@
 import type { ComponentType } from "react";
 import type { TemplateProps } from "@/components/templates/types";
-import { sampleResume as baseSampleResume } from "@/lib/sampleResume";
-import type { TemplateId } from "@/lib/types/resume";
+import type { ResumeData, TemplateId } from "@/lib/types/resume";
 import TemplateBlank from "@/components/templates/TemplateBlank";
 import TemplateModern from "@/components/templates/TemplateModern";
 import TemplateProfessional from "@/components/templates/TemplateProfessional";
@@ -30,12 +29,50 @@ export const getTemplate = (id: string) => templates.find((template) => template
 
 /** Shared choices for Home and the new-resume modal. */
 export const TEMPLATES = templates.map(({ id, name, atsFriendly, atsNote }) => ({ id, label: name, atsFriendly, atsNote }));
-export const sampleResume = {
-  ...baseSampleResume,
-  experience: baseSampleResume.experience.slice(0, 1),
-  awards: [],
-  summary: "Software developer building accessible web applications with React, TypeScript, and Python. Experienced in dashboards, automated tests, and reusable interfaces.",
-  projects: baseSampleResume.projects.map((project) => ({ ...project, description: "Built a searchable event calendar with responsive views to help student groups coordinate volunteers." })),
-  certifications: ["AWS Certified Cloud Practitioner"],
-  languages: [],
+/** Neutral, fictional content used only for unused-template previews. */
+export const sampleResume: ResumeData = {
+  firstName: "Your",
+  lastName: "Name",
+  email: "email@example.com",
+  phone: "(555) 123-4567",
+  location: "City, State",
+  linkedin: "",
+  github: "",
+  website: "",
+  summary: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+  experience: [
+    {
+      title: "Lorem ipsum",
+      company: "Dolor sit amet",
+      location: "",
+      startDate: "Month Year",
+      endDate: "Month Year",
+      bullets: ["Aenean ac interdum nisi."],
+    },
+    {
+      title: "Consectetur adipiscing",
+      company: "Elit aenean",
+      location: "",
+      startDate: "Month Year",
+      endDate: "Month Year",
+      bullets: ["Sed pulvinar lacinia felis."],
+    },
+  ],
+  education: [{
+    school: "Lorem ipsum dolor",
+    degree: "Consectetur adipiscing elit",
+    field: "",
+    startDate: "",
+    endDate: "",
+    gpa: "",
+  }],
+  skills: ["Lorem ipsum", "Dolor sit amet", "Consectetur elit"],
+  projects: [{
+    name: "Lorem ipsum",
+    link: "",
+    description: "Aenean ac interdum nisi. Sed in consequat mi.",
+  }],
+  awards: ["Lorem ipsum dolor"],
+  certifications: [],
+  languages: ["Lorem ipsum", "Dolor sit amet"],
 };
