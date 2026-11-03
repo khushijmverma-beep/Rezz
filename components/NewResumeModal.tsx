@@ -1,10 +1,11 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { auth } from "@/lib/firebase";
 import { getResumeDetails } from "@/lib/resumeDetails";
-import { TEMPLATES } from "@/lib/templates";
+import { getTemplate, TEMPLATES } from "@/lib/templates";
+import { getSettings } from "@/lib/userSettings";
 import type { TemplateId } from "@/lib/types/resume";
 
 type StartOption = "default" | "empty" | "upload";
@@ -47,10 +48,16 @@ export default function NewResumeModal({
   const [hasSavedDefaultDetails, setHasSavedDefaultDetails] = useState(false);
   const [isCheckingDefaultDetails, setIsCheckingDefaultDetails] = useState(false);
   const [defaultDetailsError, setDefaultDetailsError] = useState("");
+  const [defaultTemplateError, setDefaultTemplateError] = useState("");
+  const templateChosenRef = useRef(false);
   const canUseDefaultDetails = hasDefaultDetails || hasSavedDefaultDetails;
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (!active) return;
       setTemplateId(initialTemplate);
       setStartOption(hasDefaultDetails ? "default" : "empty");
       setTitle("Untitled resume");
@@ -58,8 +65,42 @@ export default function NewResumeModal({
       setFile(null);
       setError("");
       setIsCreating(false);
-    }
+      setDefaultTemplateError("");
+      templateChosenRef.current = false;
+    });
+
+    return () => {
+      active = false;
+    };
   }, [isOpen, initialTemplate, hasDefaultDetails]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let active = true;
+    void Promise.resolve()
+      .then(() => {
+        if (!active) return null;
+        const user = auth.currentUser;
+        if (!user) throw new Error("No authenticated user is available.");
+        return getSettings(user.uid);
+      })
+      .then((settings) => {
+        if (!settings || !active || templateChosenRef.current || initialTemplate !== "blank") return;
+        const preferredTemplate = getTemplate(settings.defaultTemplateId ?? "");
+        if (preferredTemplate) setTemplateId(preferredTemplate.id);
+      })
+      .catch((loadError: unknown) => {
+        console.error("Could not load the default resume template:", loadError);
+        if (active) {
+          setDefaultTemplateError("Couldn't load your default template. Using the current selection.");
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [initialTemplate, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -196,7 +237,10 @@ export default function NewResumeModal({
                 key={template.id}
                 type="button"
                 disabled={isCreating}
-                onClick={() => setTemplateId(template.id)}
+                onClick={() => {
+                  templateChosenRef.current = true;
+                  setTemplateId(template.id);
+                }}
                 className={`min-w-0 rounded-lg p-2 text-center ${
                   templateId === template.id
                     ? "bg-gray-100 ring-2 ring-black"
@@ -218,6 +262,11 @@ export default function NewResumeModal({
               </button>
             ))}
           </div>
+          {defaultTemplateError && (
+            <p role="status" className="mt-2 text-xs text-amber-700">
+              {defaultTemplateError}
+            </p>
+          )}
         </section>
 
         <section className="mt-6">

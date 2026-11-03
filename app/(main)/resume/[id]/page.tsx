@@ -6,6 +6,8 @@ import Link from "next/link";
 import AnalyzePanel from "@/components/AnalyzePanel";
 import ChangeTemplateDialog from "@/components/ChangeTemplateDialog";
 import DownloadMenu from "@/components/DownloadMenu";
+import SectionNav from "@/components/SectionNav";
+import StyleToolbar from "@/components/StyleToolbar";
 import PrintRoot from "@/components/templates/PrintRoot";
 import { logActivity, saveAnalysis, updateAnalysisFeedback } from "@/lib/activity";
 import { createDraft, getDraft, listDrafts, updateDraft, type Draft } from "@/lib/drafts";
@@ -20,6 +22,17 @@ import styles from "./page.module.css";
 
 type SaveStatus = "saving" | "saved" | "retrying";
 type DraftContent = { title: string; templateId: string; data: ResumeData };
+
+const editorSections = [
+  { id: "profile", label: "Profile" },
+  { id: "experience", label: "Experience" },
+  { id: "education", label: "Education" },
+  { id: "projects", label: "Projects" },
+  { id: "skills", label: "Skills" },
+  { id: "awards", label: "Awards" },
+  { id: "certifications", label: "Certifications" },
+  { id: "languages", label: "Languages" },
+];
 
 function trackActivity(uid: string, type: "edit" | "export" | "analysis") {
   void logActivity(uid, type).catch((error: unknown) => {
@@ -52,9 +65,12 @@ function mergeResumeChange(latest: ResumeData, rendered: ResumeData, next: Resum
 
 function LoadingSkeleton() {
   return (
-    <div className={styles.loadingView} aria-label="Loading resume">
+    <div className={`home-page ${styles.loadingView}`} aria-label="Loading resume">
       <div className={styles.skeletonToolbar} />
-      <div className={styles.skeletonPaper} />
+      <div className={styles.skeletonNav} />
+      <div className={styles.skeletonWorkspace}>
+        <div className={styles.skeletonPaper} />
+      </div>
       <div className={styles.skeletonPanel} />
     </div>
   );
@@ -88,11 +104,38 @@ export default function ResumeDetailPage() {
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [copying, setCopying] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
+  const [sectionsOpen, setSectionsOpen] = useState(true);
+  const [analysisOpen, setAnalysisOpen] = useState(true);
+  const previewFrameRef = useRef<HTMLDivElement>(null);
+  const previewPaperRef = useRef<HTMLDivElement>(null);
+  const [previewScale, setPreviewScale] = useState(1);
+  const [previewHeight, setPreviewHeight] = useState(1056);
+  const [previewLeft, setPreviewLeft] = useState(0);
 
   useEffect(() => {
     renderedDataRef.current = data;
     dataRef.current = data;
   }, [data]);
+
+  useEffect(() => {
+    const frame = previewFrameRef.current;
+    const paper = previewPaperRef.current;
+    if (!frame || !paper) return;
+
+    const updatePreviewSize = () => {
+      const availableWidth = frame.clientWidth;
+      const scale = Math.min(1.12, availableWidth / paper.offsetWidth);
+      setPreviewScale(scale);
+      setPreviewHeight(paper.offsetHeight * scale);
+      setPreviewLeft(Math.max(0, (availableWidth - paper.offsetWidth * scale) / 2));
+    };
+
+    const observer = new ResizeObserver(updatePreviewSize);
+    observer.observe(frame);
+    observer.observe(paper);
+    updatePreviewSize();
+    return () => observer.disconnect();
+  }, [draft]);
 
   const handleDataChange = (next: ResumeData) => {
     setData((prev) => {
@@ -403,49 +446,61 @@ export default function ResumeDetailPage() {
   const printTemplateId = getTemplate(draft.templateId)?.id ?? "blank";
 
   return (
-    <main className={styles.resumeView}>
-      <section className={styles.workspace} aria-label="Resume editor">
-        <header className={styles.toolbar}>
-          <Link className={styles.homeLink} href="/">
-            ← Home
-          </Link>
-          <label className={styles.titleLabel} htmlFor="resume-title-input">
-            Resume title
-          </label>
-          <input
-            className={styles.titleInput}
-            id="resume-title-input"
-            value={title}
-            onChange={(event) => {
-              const nextTitle = event.target.value;
-              titleRef.current = nextTitle;
-              setTitle(nextTitle);
-              setSaveStatus("saving");
-            }}
-          />
-          <div className={styles.toolbarActions}>
-            <span className={styles.saveStatus} aria-live="polite">
-              {saveStatus === "saving"
-                ? "Saving..."
-                : saveStatus === "saved"
-                  ? "Saved"
-                  : "Couldn't save, retrying"}
-            </span>
+    <main
+      className={`home-page ${styles.resumeView} ${
+        !sectionsOpen && !analysisOpen
+          ? styles.bothPanelsClosed
+          : !sectionsOpen
+            ? styles.sectionsClosed
+            : !analysisOpen
+              ? styles.analysisClosed
+              : ""
+      }`}
+    >
+      <header className={styles.toolbar}>
+        <Link className={styles.homeLink} href="/">
+          ← Home
+        </Link>
+        <label className={styles.titleLabel} htmlFor="resume-title-input">
+          Resume title
+        </label>
+        <input
+          className={styles.titleInput}
+          id="resume-title-input"
+          value={title}
+          onChange={(event) => {
+            const nextTitle = event.target.value;
+            titleRef.current = nextTitle;
+            setTitle(nextTitle);
+            setSaveStatus("saving");
+          }}
+        />
+        <span className={styles.saveStatus} aria-live="polite">
+          {saveStatus === "saving"
+            ? "Saving..."
+            : saveStatus === "saved"
+              ? "Saved"
+              : "Couldn't save, retrying"}
+        </span>
+        <div className={styles.toolbarActions}>
+          <div className={styles.templateAction}>
             <button
               type="button"
               onClick={() => setTemplateDialogOpen(true)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className={styles.actionButton}
             >
               Change template
             </button>
-            <button
-              type="button"
-              onClick={() => void handleMakeCopy()}
-              disabled={copying || saveStatus !== "saved"}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {copying ? "Copying..." : "Make a copy"}
-            </button>
+          </div>
+          <button
+            type="button"
+            className={`${styles.actionButton} ${styles.copyAction}`}
+            onClick={() => void handleMakeCopy()}
+            disabled={copying || saveStatus !== "saved"}
+          >
+            {copying ? "Copying..." : "Make a copy"}
+          </button>
+          <div className={styles.downloadAction}>
             <DownloadMenu
               title={title}
               data={data}
@@ -453,58 +508,106 @@ export default function ResumeDetailPage() {
               onExport={() => trackActivity(user.uid, "export")}
             />
           </div>
-        </header>
-        {copyError && (
-          <p role="alert" className="mb-3 text-sm text-red-600">
-            {copyError}
-          </p>
-        )}
-        {downloadError && (
-          <p role="alert" className="mb-3 text-sm text-red-600">
-            {downloadError}
-          </p>
-        )}
+        </div>
+        <details className={styles.styleDisclosure}>
+          <summary className={styles.styleSummary}>
+            <span>Page style</span>
+            <span>Fonts, text color, accent color, and size</span>
+          </summary>
+          <section className={styles.styleTools} aria-label="Page style controls">
+            <StyleToolbar
+              style={data.style}
+              onChange={(style) => handleDataChange({ ...dataRef.current, style })}
+            />
+          </section>
+        </details>
+      </header>
+      {(copyError || downloadError) && (
+        <div className={styles.toolbarErrors}>
+          {copyError && <p role="alert">{copyError}</p>}
+          {downloadError && <p role="alert">{downloadError}</p>}
+        </div>
+      )}
+      <div className={`${styles.sectionNav} ${!sectionsOpen ? styles.collapsedPanel : ""}`}>
+        <button
+          type="button"
+          className={`${styles.panelToggle} ${styles.sectionToggle} ${!sectionsOpen ? styles.toggleCollapsed : ""}`}
+          aria-label={sectionsOpen ? "Hide sections panel" : "Show sections panel"}
+          aria-expanded={sectionsOpen}
+          onClick={() => setSectionsOpen((open) => !open)}
+        >
+          <span aria-hidden="true">{sectionsOpen ? "‹" : "›"}</span>
+        </button>
+        {sectionsOpen && <SectionNav sections={editorSections} />}
+      </div>
+      <section className={styles.workspace} aria-label="Resume editor">
         <div className={styles.paperScroller}>
           {TemplateComponent ? (
-            <TemplateComponent data={data} editable onChange={handleDataChange} />
+            <div
+              ref={previewFrameRef}
+              className={styles.paperFrame}
+              style={{ height: previewHeight }}
+            >
+              <div
+                ref={previewPaperRef}
+                className={styles.paperScale}
+                style={{
+                  left: previewLeft,
+                  transform: `scale(${previewScale})`,
+                }}
+              >
+                <TemplateComponent data={data} editable onChange={handleDataChange} />
+              </div>
+            </div>
           ) : (
             <p role="alert">This resume uses an unsupported template.</p>
           )}
         </div>
       </section>
-      <aside className={styles.sidebar} aria-label="Resume analysis">
-        <AnalyzePanel
-          resumeText={resumeToText(data)}
-          data={data}
-          templateId={draft.templateId}
-          onResult={(result: JobMatchResult, jobDescription: string) => {
-            // saveAnalysis also records the "analysis" activity.
-            setLastAnalysisId(null);
-            void saveAnalysis(user.uid, {
-              draftId: id,
-              draftTitle: titleRef.current,
-              matchScore: result.overallFit.matchScore,
-              rating: result.overallFit.rating,
-              atsScore: result.ats?.score,
-              humanScore: result.human?.score,
-              templateId: draft.templateId,
-              scorerVersion: result.scorerVersion,
-              jobDescription,
-            })
-              .then(setLastAnalysisId)
-              .catch((error: unknown) => {
-                console.error("Failed to save resume analysis:", error);
-              });
-          }}
-          onFeedback={async (rating, note) => {
-            if (!lastAnalysisId) return;
-            try {
-              await updateAnalysisFeedback(user.uid, lastAnalysisId, rating, note);
-            } catch (error: unknown) {
-              console.error("Failed to save analysis feedback:", error);
-            }
-          }}
-        />
+      <aside className={`${styles.sidebar} ${!analysisOpen ? styles.collapsedPanel : ""}`} aria-label="Resume analysis">
+        <button
+          type="button"
+          className={`${styles.panelToggle} ${styles.analysisToggle} ${!analysisOpen ? styles.toggleCollapsed : ""}`}
+          aria-label={analysisOpen ? "Hide analysis panel" : "Show analysis panel"}
+          aria-expanded={analysisOpen}
+          onClick={() => setAnalysisOpen((open) => !open)}
+        >
+          <span aria-hidden="true">{analysisOpen ? "›" : "‹"}</span>
+        </button>
+        {analysisOpen && (
+          <AnalyzePanel
+            resumeText={resumeToText(data)}
+            data={data}
+            templateId={draft.templateId}
+            onResult={(result: JobMatchResult, jobDescription: string) => {
+              // saveAnalysis also records the "analysis" activity.
+              setLastAnalysisId(null);
+              void saveAnalysis(user.uid, {
+                draftId: id,
+                draftTitle: titleRef.current,
+                matchScore: result.overallFit.matchScore,
+                rating: result.overallFit.rating,
+                atsScore: result.ats?.score,
+                humanScore: result.human?.score,
+                templateId: draft.templateId,
+                scorerVersion: result.scorerVersion,
+                jobDescription,
+              })
+                .then(setLastAnalysisId)
+                .catch((error: unknown) => {
+                  console.error("Failed to save resume analysis:", error);
+                });
+            }}
+            onFeedback={async (rating, note) => {
+              if (!lastAnalysisId) return;
+              try {
+                await updateAnalysisFeedback(user.uid, lastAnalysisId, rating, note);
+              } catch (error: unknown) {
+                console.error("Failed to save analysis feedback:", error);
+              }
+            }}
+          />
+        )}
       </aside>
       <PrintRoot templateId={printTemplateId} data={data} />
       {templateDialogOpen && (
