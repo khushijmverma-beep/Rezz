@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -32,7 +33,7 @@ export default function ResumeCard({
   return (
     <article
       className={`relative min-w-0 rounded-xl border border-gray-200 bg-white transition hover:border-gray-300 ${
-        isList ? "flex items-center gap-4 p-3" : "w-[200px] overflow-hidden"
+        isList ? "flex items-center gap-4 p-3" : "w-[200px]"
       }`}
     >
       <Link
