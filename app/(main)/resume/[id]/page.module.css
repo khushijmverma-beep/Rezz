@@ -1,3 +1,18 @@
+/* Full-width editor inside the shared .site-content wrapper. Owned here so Home's
+   CSS (which uses its own home-page class) can't change the editor. */
+:global(.site-content):has(> .editorPage) {
+  max-width: none;
+  min-height: 100dvh;
+  padding: 0 1rem 5rem;
+  background: #fff;
+}
+
+@media (min-width: 640px) {
+  :global(.site-content):has(> .editorPage) {
+    padding-inline: 1.5rem;
+  }
+}
+
 .resumeView {
   display: grid;
   grid-template-areas:
@@ -261,21 +276,7 @@
   margin-left: 0.25rem;
 }
 
-.paperScale :global(.resume-section-flash h2) {
-  animation: resume-section-flash 500ms ease-out;
-  border-radius: 0.25rem;
-}
 
-@keyframes resume-section-flash {
-  0% {
-    background-color: #fff1a8;
-    box-shadow: 0 0 0 0.4rem #fff1a8;
-  }
-  100% {
-    background-color: transparent;
-    box-shadow: 0 0 0 0 transparent;
-  }
-}
 
 .toolbarErrors {
   grid-area: errors;
@@ -382,6 +383,11 @@
   gap: 1rem;
   min-width: 0;
   height: calc(100dvh - 68px - 1.5rem);
+}
+
+/* The panel stays mounted while collapsed (keeps its result); only the toggle shows. */
+.sidebar.collapsedPanel > :not(.panelToggle) {
+  display: none;
 }
 
 .sidebar.collapsedPanel {

@@ -73,14 +73,14 @@
 }
 
 .analyzeButton {
-  border-color: #d3e3fd;
-  background: #d3e3fd;
-  color: #0842a0;
+  border-color: #293449;
+  background: #293449;
+  color: #fff;
 }
 
 .analyzeButton:hover {
-  border-color: #b6d2fb;
-  background: #b6d2fb;
+  border-color: #1d2939;
+  background: #1d2939;
 }
 
 .secondaryButton {

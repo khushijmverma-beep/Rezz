@@ -65,7 +65,7 @@ function mergeResumeChange(latest: ResumeData, rendered: ResumeData, next: Resum
 
 function LoadingSkeleton() {
   return (
-    <div className={`home-page ${styles.loadingView}`} aria-label="Loading resume">
+    <div className={`${styles.editorPage} ${styles.loadingView}`} aria-label="Loading resume">
       <div className={styles.skeletonToolbar} />
       <div className={styles.skeletonNav} />
       <div className={styles.skeletonWorkspace}>
@@ -447,7 +447,7 @@ export default function ResumeDetailPage() {
 
   return (
     <main
-      className={`home-page ${styles.resumeView} ${
+      className={`${styles.editorPage} ${styles.resumeView} ${
         !sectionsOpen && !analysisOpen
           ? styles.bothPanelsClosed
           : !sectionsOpen
@@ -538,7 +538,7 @@ export default function ResumeDetailPage() {
         >
           <span aria-hidden="true">{sectionsOpen ? "‹" : "›"}</span>
         </button>
-        {sectionsOpen && <SectionNav sections={editorSections} />}
+        {sectionsOpen && <SectionNav sections={editorSections} collapsible={false} />}
       </div>
       <section className={styles.workspace} aria-label="Resume editor">
         <div className={styles.paperScroller}>
@@ -574,40 +574,39 @@ export default function ResumeDetailPage() {
         >
           <span aria-hidden="true">{analysisOpen ? "›" : "‹"}</span>
         </button>
-        {analysisOpen && (
-          <AnalyzePanel
-            resumeText={resumeToText(data)}
-            data={data}
-            templateId={draft.templateId}
-            onResult={(result: JobMatchResult, jobDescription: string) => {
-              // saveAnalysis also records the "analysis" activity.
-              setLastAnalysisId(null);
-              void saveAnalysis(user.uid, {
-                draftId: id,
-                draftTitle: titleRef.current,
-                matchScore: result.overallFit.matchScore,
-                rating: result.overallFit.rating,
-                atsScore: result.ats?.score,
-                humanScore: result.human?.score,
-                templateId: draft.templateId,
-                scorerVersion: result.scorerVersion,
-                jobDescription,
-              })
-                .then(setLastAnalysisId)
-                .catch((error: unknown) => {
-                  console.error("Failed to save resume analysis:", error);
-                });
-            }}
-            onFeedback={async (rating, note) => {
-              if (!lastAnalysisId) return;
-              try {
-                await updateAnalysisFeedback(user.uid, lastAnalysisId, rating, note);
-              } catch (error: unknown) {
-                console.error("Failed to save analysis feedback:", error);
-              }
-            }}
-          />
-        )}
+        {/* Always mounted so results and feedback survive collapsing; CSS hides it. */}
+        <AnalyzePanel
+          resumeText={resumeToText(data)}
+          data={data}
+          templateId={draft.templateId}
+          onResult={(result: JobMatchResult, jobDescription: string) => {
+            // saveAnalysis also records the "analysis" activity.
+            setLastAnalysisId(null);
+            void saveAnalysis(user.uid, {
+              draftId: id,
+              draftTitle: titleRef.current,
+              matchScore: result.overallFit.matchScore,
+              rating: result.overallFit.rating,
+              atsScore: result.ats?.score,
+              humanScore: result.human?.score,
+              templateId: draft.templateId,
+              scorerVersion: result.scorerVersion,
+              jobDescription,
+            })
+              .then(setLastAnalysisId)
+              .catch((error: unknown) => {
+                console.error("Failed to save resume analysis:", error);
+              });
+          }}
+          onFeedback={async (rating, note) => {
+            if (!lastAnalysisId) return;
+            try {
+              await updateAnalysisFeedback(user.uid, lastAnalysisId, rating, note);
+            } catch (error: unknown) {
+              console.error("Failed to save analysis feedback:", error);
+            }
+          }}
+        />
       </aside>
       <PrintRoot templateId={printTemplateId} data={data} />
       {templateDialogOpen && (
