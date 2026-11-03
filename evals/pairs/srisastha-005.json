@@ -1,0 +1,37 @@
+
+{
+  "id": "srisastha-004",
+  "resumeText": "Casey Rivera\ncasey.rivera@example.com\n\nEducation\nExample High School\nGraduated 2025",
+  "jobDescription": "Entry Level Software Developer\n\nRequirements:\n- Knowledge of Python, JavaScript, or Java\n- Experience working on software projects\n- Familiarity with Git\n- Understanding of databases and APIs\n- Problem-solving and communication skills",
+  "templateId": "simple",
+  "humanAtsScore": 1,
+  "humanRecruiterScore": 1,
+  "notes": "Almost empty resume. The applicant has no listed experience, technical skills, or projects. The scanner should identify missing sections and return low scores without crashing.",
+  "resumeData": {
+    "firstName": "Casey",
+    "lastName": "Rivera",
+    "email": "casey.rivera@example.com",
+    "phone": "",
+    "location": "",
+    "linkedin": "",
+    "github": "",
+    "website": "",
+    "summary": "",
+    "experience": [],
+    "education": [
+      {
+        "school": "Example High School",
+        "degree": "High School Diploma",
+        "field": "",
+        "startDate": "",
+        "endDate": "2025",
+        "gpa": ""
+      }
+    ],
+    "skills": [],
+    "projects": [],
+    "awards": [],
+    "certifications": [],
+    "languages": []
+  }
+}

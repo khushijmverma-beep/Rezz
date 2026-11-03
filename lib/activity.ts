@@ -79,6 +79,58 @@ export function activityTotal(day: ActivityDay): number {
   return day.edits + day.exports + day.analyses + day.creates;
 }
 
+/**
+ * An analysis document proves a scan occurred even if the separate
+ * activityDays counter failed to write. Reconcile scan counts for the UI;
+ * this does not change Firestore or invent edit/export activity.
+ */
+export function reconcileActivityDays(
+  days: ActivityDay[],
+  scans: SavedAnalysis[]
+): { days: ActivityDay[]; repairedDates: string[] } {
+  const today = new Date();
+  const first = new Date(today);
+  first.setDate(today.getDate() - 364);
+  const earliest = localDateKey(first);
+  const latest = localDateKey(today);
+
+  const byDate = new Map<string, ActivityDay>();
+  for (const day of days) {
+    byDate.set(day.date, { ...day });
+  }
+
+  const scansPerDay = new Map<string, number>();
+  for (const scan of scans) {
+    if (!Number.isFinite(scan.createdAt) || scan.createdAt <= 0) continue;
+    const date = localDateKey(new Date(scan.createdAt));
+    if (date < earliest || date > latest) continue;
+    scansPerDay.set(date, (scansPerDay.get(date) ?? 0) + 1);
+  }
+
+  const repairedDates: string[] = [];
+  for (const [date, count] of scansPerDay) {
+    const current = byDate.get(date) ?? {
+      date,
+      edits: 0,
+      exports: 0,
+      analyses: 0,
+      creates: 0,
+    };
+    if (current.analyses < count) {
+      repairedDates.push(date);
+      current.analyses = count;
+    }
+    byDate.set(date, current);
+  }
+
+  return {
+    days: [...byDate.values()].sort((a, b) =>
+      a.date.localeCompare(b.date)
+    ),
+    repairedDates: repairedDates.sort(),
+  };
+}
+
 export async function logActivity(
   uid: string,
   type: ActivityType

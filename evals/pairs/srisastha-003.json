@@ -1,0 +1,64 @@
+
+{
+  "id": "srisastha-003",
+  "resumeText": "Taylor Brooks\nAustin, TX | (555) 010-0203 | taylor.brooks@example.com\n\nEducation\nExample University\nBachelor of Business Administration, 2024\n\nExperience\nExample Marketing Agency\nMarketing Coordinator, January 2024 - Present\n- Created weekly performance reports using Excel.\n- Analyzed campaign data and presented findings to managers.\n- Increased customer engagement by 15% through reporting improvements.\n- Coordinated projects with a team of 6 employees.\n\nSkills\nExcel, Data Analysis, Reporting, Communication, Project Management\n\nProjects\nSales Dashboard\n- Created an Excel dashboard to compare monthly sales trends.\n- Used basic SQL queries to organize sample customer data.",
+  "jobDescription": "Junior Data Analyst\n\nRequirements:\n- Experience analyzing and interpreting data\n- Knowledge of SQL and Excel\n- Familiarity with Python\n- Ability to create reports and dashboards\n- Strong problem-solving and communication skills\n- Experience with data visualization tools such as Power BI or Tableau",
+  "templateId": "simple",
+  "humanAtsScore": 3,
+  "humanRecruiterScore": 3,
+  "notes": "Moderate match. The candidate has transferable data analysis and reporting experience, including Excel and basic SQL, but lacks Python and advanced visualization experience.",
+  "resumeData": {
+    "firstName": "Taylor",
+    "lastName": "Brooks",
+    "email": "taylor.brooks@example.com",
+    "phone": "(555) 010-0203",
+    "location": "Austin, TX",
+    "linkedin": "",
+    "github": "",
+    "website": "",
+    "summary": "",
+    "experience": [
+      {
+        "company": "Example Marketing Agency",
+        "title": "Marketing Coordinator",
+        "location": "Austin, TX",
+        "startDate": "January 2024",
+        "endDate": "Present",
+        "bullets": [
+          "Created weekly performance reports using Excel.",
+          "Analyzed campaign data and presented findings to managers.",
+          "Increased customer engagement by 15% through reporting improvements.",
+          "Coordinated projects with a team of 6 employees."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "Example University",
+        "degree": "Bachelor of Business Administration",
+        "field": "Business Administration",
+        "startDate": "",
+        "endDate": "2024",
+        "gpa": ""
+      }
+    ],
+    "skills": [
+      "Excel",
+      "Data Analysis",
+      "Reporting",
+      "Communication",
+      "Project Management",
+      "Basic SQL"
+    ],
+    "projects": [
+      {
+        "name": "Sales Dashboard",
+        "link": "",
+        "description": "Created an Excel dashboard to compare monthly sales trends. Used basic SQL queries to organize sample customer data."
+      }
+    ],
+    "awards": [],
+    "certifications": [],
+    "languages": ["English"]
+  }
+}

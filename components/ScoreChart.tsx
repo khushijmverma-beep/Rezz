@@ -18,7 +18,7 @@ const series: {
 
 export default function ScoreChart({ analyses }: Props) {
   const scans = [...analyses].sort(
-    (a, b) => a.createdAt - b.createdAt
+    (a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id)
   );
 
   const width = 800;
@@ -141,7 +141,9 @@ export default function ScoreChart({ analyses }: Props) {
                       >
                         <title>
                           {`${item.label}: ${score}/100
-${new Date(scan.createdAt).toLocaleDateString()}
+Scan ${index + 1} — ${scan.createdAt
+                            ? new Date(scan.createdAt).toLocaleString()
+                            : "Time unavailable"}
 ${scan.jobTitle || scan.draftTitle}`}
                         </title>
                       </circle>
@@ -168,12 +170,7 @@ ${scan.jobTitle || scan.draftTitle}`}
                     fill="#6b7280"
                     textAnchor="middle"
                   >
-                    {scan.createdAt
-                      ? new Date(scan.createdAt).toLocaleDateString(
-                          "en-US",
-                          { month: "short", day: "numeric" }
-                        )
-                      : "Unknown"}
+                    {`Scan ${index + 1}`}
                   </text>
                 );
               })}
