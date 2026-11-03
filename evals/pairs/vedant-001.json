@@ -1,0 +1,60 @@
+{
+  "id": "vedant-001",
+  "resumeText": "Vedant Example\nvedant@example.com\n(555) 123-4567\nCity, State\nSoftware Developer with React, TypeScript, SQL, and Git experience building accessible applications and reducing manual reporting time by 35%.\nSoftware Developer Intern Fictional Studio City, State\nMay 2025 August 2025\nBuilt React and TypeScript dashboards used by 40 colleagues, reducing manual reporting time by 35%.\nDeveloped SQL queries and automated tests for 12 reports, preventing recurring errors in weekly summaries.\nReviewed 20 pull requests using Git and documented code review feedback for four team members.\nBS Computer Science Example University\nAugust 2022 May 2026\nReact, TypeScript, SQL, Git\nExample dashboard\nBuilt accessible React reports for 40 fictional users.",
+  "jobDescription": "Software Developer\nRequired: React, TypeScript, Git, SQL. Build accessible web applications, write automated tests, and review code.",
+  "templateId": "simple",
+  "humanAtsScore": 5,
+  "humanRecruiterScore": 4,
+  "notes": "Vedant Week 6 human label. Fictional fixture.",
+  "resumeData": {
+    "firstName": "Vedant",
+    "lastName": "Example",
+    "email": "vedant@example.com",
+    "phone": "(555) 123-4567",
+    "location": "City, State",
+    "linkedin": "",
+    "github": "",
+    "website": "",
+    "summary": "Software Developer with React, TypeScript, SQL, and Git experience building accessible applications and reducing manual reporting time by 35%.",
+    "experience": [
+      {
+        "title": "Software Developer Intern",
+        "company": "Fictional Studio",
+        "location": "City, State",
+        "startDate": "May 2025",
+        "endDate": "August 2025",
+        "bullets": [
+          "Built React and TypeScript dashboards used by 40 colleagues, reducing manual reporting time by 35%.",
+          "Developed SQL queries and automated tests for 12 reports, preventing recurring errors in weekly summaries.",
+          "Reviewed 20 pull requests using Git and documented code review feedback for four team members."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "Example University",
+        "degree": "BS",
+        "field": "Computer Science",
+        "startDate": "August 2022",
+        "endDate": "May 2026",
+        "gpa": ""
+      }
+    ],
+    "skills": [
+      "React",
+      "TypeScript",
+      "SQL",
+      "Git"
+    ],
+    "projects": [
+      {
+        "name": "Example dashboard",
+        "link": "",
+        "description": "Built accessible React reports for 40 fictional users."
+      }
+    ],
+    "awards": [],
+    "certifications": [],
+    "languages": []
+  }
+}
