@@ -349,6 +349,38 @@ export default function Home() {
 
   if (!userId) return null;
 
+  // Heading on the left, sort and view controls on the right, on one line.
+  // In grid view it sits inside the card grid so it lines up with the cards.
+  const resumesHeader = (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="m-0! text-base! font-medium">
+          Your resumes
+        </h2>
+
+        <HomeToolbar
+          sortBy={sortBy}
+          onSortByChange={(value) => {
+            setSortBy(value);
+            setDescending(value !== "title");
+          }}
+          descending={descending}
+          onToggleOrder={() => setDescending((value) => !value)}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
+      </div>
+
+      {pageError && (
+        <p role="alert" className="mt-4 text-sm text-red-600">
+          {pageError}
+        </p>
+      )}
+    </>
+  );
+  const headerInGrid =
+    !loadingDrafts && sortedDrafts.length > 0 && viewMode === "grid";
+
   return (
     <main className="home-page pt-0">
       <HomeTopBar
@@ -361,30 +393,7 @@ export default function Home() {
       </section>
 
       <section className="mt-5">
-        {/* Heading on the left, sort and view controls on the right, on one line. */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="m-0! text-base! font-medium">
-            Your resumes
-          </h2>
-
-          <HomeToolbar
-            sortBy={sortBy}
-            onSortByChange={(value) => {
-              setSortBy(value);
-              setDescending(value !== "title");
-            }}
-            descending={descending}
-            onToggleOrder={() => setDescending((value) => !value)}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-          />
-        </div>
-
-        {pageError && (
-          <p role="alert" className="mt-4 text-sm text-red-600">
-            {pageError}
-          </p>
-        )}
+        {!headerInGrid && resumesHeader}
 
         {loadingDrafts ? (
           <p className="mt-4 text-sm text-gray-500">
@@ -392,12 +401,16 @@ export default function Home() {
           </p>
         ) : sortedDrafts.length > 0 ? (
           <div
-            className={`mt-4 ${
+            className={
               viewMode === "grid"
                 ? "grid grid-cols-[repeat(auto-fill,200px)] justify-center-safe gap-5"
-                : "flex flex-col gap-3"
-            }`}
+                : "mt-4 flex flex-col gap-3"
+            }
           >
+            {headerInGrid && (
+              <div className="col-span-full">{resumesHeader}</div>
+            )}
+
             {sortedDrafts.map((draft) => (
               <ResumeCard
                 key={draft.id}
