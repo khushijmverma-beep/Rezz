@@ -102,3 +102,10 @@
   .paper .itemTitle, .paper .organization, .paper .dateRange { break-after: avoid; }
   .paper .add, .paper .remove, .paper .placeholder { display: none; }
 }
+
+/* Preserve the full-page sidebar background when the shared print root removes
+   the default paper minimum height. Long resumes may still flow onto more pages. */
+@media print {
+  :global(#print-root) > .paper.modern,
+  :global(#print-root) > .paper.compact { min-height: 11in; }
+}

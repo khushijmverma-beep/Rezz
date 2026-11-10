@@ -1,0 +1,48 @@
+{
+  "id": "vedant-002",
+  "resumeText": "Vedant Example\nvedant@example.com\n(555) 123-4567\nCity, State\nLooking for a job.\nSoftware Developer Intern Fictional Studio City, State\nMay 2025 August 2025\nResponsible for tasks.\nHelped with work.\nBS Computer Science Example University\nAugust 2022 May 2026",
+  "jobDescription": "Software Developer\nRequired: React, TypeScript, Git, SQL. Build accessible web applications, write automated tests, and review code.",
+  "templateId": "simple",
+  "humanAtsScore": 2,
+  "humanRecruiterScore": 1,
+  "notes": "Vedant Week 6 human label. Fictional fixture.",
+  "resumeData": {
+    "firstName": "Vedant",
+    "lastName": "Example",
+    "email": "vedant@example.com",
+    "phone": "(555) 123-4567",
+    "location": "City, State",
+    "linkedin": "",
+    "github": "",
+    "website": "",
+    "summary": "Looking for a job.",
+    "experience": [
+      {
+        "title": "Software Developer Intern",
+        "company": "Fictional Studio",
+        "location": "City, State",
+        "startDate": "May 2025",
+        "endDate": "August 2025",
+        "bullets": [
+          "Responsible for tasks.",
+          "Helped with work."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "Example University",
+        "degree": "BS",
+        "field": "Computer Science",
+        "startDate": "August 2022",
+        "endDate": "May 2026",
+        "gpa": ""
+      }
+    ],
+    "skills": [],
+    "projects": [],
+    "awards": [],
+    "certifications": [],
+    "languages": []
+  }
+}

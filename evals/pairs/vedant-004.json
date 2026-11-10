@@ -1,0 +1,52 @@
+{
+  "id": "vedant-004",
+  "resumeText": "Vedant Example\nvedant@example.com\n(555) 123-4567\nCity, State\nRegistered Nurse with experience in patient care, medication administration, and coordinating safe discharge plans for a 24-bed unit.\nRegistered Nurse Example Clinic City, State\nMay 2025 August 2025\nCoordinated discharge education for 20 patients weekly and reduced repeat clarification calls by 25%.\nAdministered prescribed medications and documented patient assessments across a 24-bed unit with multidisciplinary colleagues.\nBS Nursing Example University\nAugust 2022 May 2026\nPatient care, Medication administration, BLS",
+  "jobDescription": "Registered Nurse\nRequired: patient care, medication administration, BLS. Coordinate discharge education and document assessments.",
+  "templateId": "simple",
+  "humanAtsScore": 5,
+  "humanRecruiterScore": 4,
+  "notes": "Vedant Week 6 human label. Fictional fixture.",
+  "resumeData": {
+    "firstName": "Vedant",
+    "lastName": "Example",
+    "email": "vedant@example.com",
+    "phone": "(555) 123-4567",
+    "location": "City, State",
+    "linkedin": "",
+    "github": "",
+    "website": "",
+    "summary": "Registered Nurse with experience in patient care, medication administration, and coordinating safe discharge plans for a 24-bed unit.",
+    "experience": [
+      {
+        "title": "Registered Nurse",
+        "company": "Example Clinic",
+        "location": "City, State",
+        "startDate": "May 2025",
+        "endDate": "August 2025",
+        "bullets": [
+          "Coordinated discharge education for 20 patients weekly and reduced repeat clarification calls by 25%.",
+          "Administered prescribed medications and documented patient assessments across a 24-bed unit with multidisciplinary colleagues."
+        ]
+      }
+    ],
+    "education": [
+      {
+        "school": "Example University",
+        "degree": "BS",
+        "field": "Nursing",
+        "startDate": "August 2022",
+        "endDate": "May 2026",
+        "gpa": ""
+      }
+    ],
+    "skills": [
+      "Patient care",
+      "Medication administration",
+      "BLS"
+    ],
+    "projects": [],
+    "awards": [],
+    "certifications": [],
+    "languages": []
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "vedant-003",
+  "resumeText": "",
+  "jobDescription": "Software Developer\nRequired: React, TypeScript, Git, SQL. Build accessible web applications, write automated tests, and review code.",
+  "templateId": "simple",
+  "humanAtsScore": 1,
+  "humanRecruiterScore": 1,
+  "notes": "Vedant Week 6 human label. Fictional fixture.",
+  "resumeData": {
+    "firstName": "",
+    "lastName": "",
+    "email": "",
+    "phone": "",
+    "location": "",
+    "linkedin": "",
+    "github": "",
+    "website": "",
+    "summary": "",
+    "experience": [],
+    "education": [],
+    "skills": [],
+    "projects": [],
+    "awards": [],
+    "certifications": [],
+    "languages": []
+  }
+}
