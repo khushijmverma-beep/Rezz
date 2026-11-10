@@ -160,7 +160,7 @@ function parseJson(text: string): Record<string, unknown> | null {
 
 // Exact text enforcement
 function normalize(s: string): string {
-    return s.toLowerCase().replace(/\s+/g, " ").trim();
+    return s.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
 }
 
 // Returns the value if it really appears in the input, otherwise "".
