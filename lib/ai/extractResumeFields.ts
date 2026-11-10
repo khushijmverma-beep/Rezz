@@ -159,8 +159,14 @@ function parseJson(text: string): Record<string, unknown> | null {
 }
 
 // Exact text enforcement
+// Ignore only formatting noise (spacing, line breaks, hyphens/dashes, commas,
+// quotes, bullets) so a field still matches when the PDF breaks it up. Keep
+// letters, digits and + # . / & so "C++", "C#", "1.5", "CI/CD" and "R&D" stay
+// distinct and the AI can't pass off near-misses as text from the resume.
 function normalize(s: string): string {
-    return s.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+    return s
+        .toLowerCase()
+        .replace(/[\s\-–—,'"‘’“”•‣◦▪●∙·]/g, "");
 }
 
 // Returns the value if it really appears in the input, otherwise "".
