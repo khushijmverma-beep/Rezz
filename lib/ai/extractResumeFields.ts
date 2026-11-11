@@ -82,6 +82,9 @@ Rules:
   as an empty string or empty array.
 - Split a full name into firstName and lastName.
 - Do not include bullet characters such as "-" or "•" at the start of bullets.
+- "languages" means spoken or written human languages (like English, Spanish),
+  not programming languages. Put programming languages in "skills".
+- "certifications" means named credentials (like "AWS Certified Cloud Practitioner").
 - If the text is not personal or professional resume information, return exactly
   {"isResumeInfo": false}.
 - Return JSON only, no markdown fences.
@@ -100,6 +103,8 @@ JSON shape:
   "experience": [{ "company": string, "title": string, "location": string, "startDate": string, "endDate": string, "bullets": [string] }],
   "education": [{ "school": string, "degree": string, "field": string, "startDate": string, "endDate": string, "gpa": string }],
   "skills": [string],
+  "certifications": [string],
+  "languages": [string],
   "projects": [{ "name": string, "link": string, "description": string }],
   "awards": [string]
 }
@@ -249,6 +254,12 @@ export async function extractResumeFields(
 
     const skills = keepStringArray(parsed.skills, source);
     if (skills.length) result.skills = skills;
+
+    const certifications = keepStringArray(parsed.certifications, source);
+    if (certifications.length) result.certifications = certifications;
+
+    const languages = keepStringArray(parsed.languages, source);
+    if (languages.length) result.languages = languages;
 
     const awards = keepStringArray(parsed.awards, source);
     if (awards.length) result.awards = awards;
